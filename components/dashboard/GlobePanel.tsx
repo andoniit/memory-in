@@ -27,15 +27,26 @@ export function GlobePanel({ pins }: { pins: GlobePinFull[] }) {
 
   return (
     <>
-      <div id="globe" className="relative h-[44vh] w-full">
+      <div
+        id="globe"
+        className="relative h-[52vh] w-full overflow-hidden border-y border-border"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 38%, #111c30 0%, #0a0f1a 55%, #06080f 100%)",
+        }}
+      >
         <Globe
           pins={placed}
           onPinTap={(p) =>
             setSelected(pins.find((x) => x.id === p.id) ?? null)
           }
         />
-        <span className="pointer-events-none absolute left-page top-3 label">
-          {String(placed.length).padStart(2, "0")} / {String(pins.length).padStart(2, "0")} placed
+        <span className="pointer-events-none absolute left-page top-3 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-white/55">
+          {String(placed.length).padStart(2, "0")} /{" "}
+          {String(pins.length).padStart(2, "0")} placed
+        </span>
+        <span className="pointer-events-none absolute bottom-3 right-page font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-white/35">
+          drag to rotate
         </span>
       </div>
 

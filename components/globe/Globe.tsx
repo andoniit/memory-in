@@ -14,8 +14,6 @@ export interface GlobePin {
 }
 
 const ACCENT = 0xf25623;
-const LINE = 0xdedede;
-const GLOBE = 0xededed;
 
 /** lat/lng (degrees) → point on a sphere of the given radius. */
 function latLngToVec3(lat: number, lng: number, r: number) {
@@ -28,28 +26,28 @@ function latLngToVec3(lat: number, lng: number, r: number) {
   );
 }
 
-/** Decorative tilted ring of line segments. */
-function makeRing(radius: number, tilt: number, dashed: boolean) {
-  const pts: THREE.Vector3[] = [];
-  const seg = 128;
-  for (let i = 0; i <= seg; i++) {
-    const a = (i / seg) * Math.PI * 2;
-    pts.push(new THREE.Vector3(Math.cos(a) * radius, 0, Math.sin(a) * radius));
+function makeStars(count: number) {
+  const geo = new THREE.BufferGeometry();
+  const pos = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    // Distribute on a large shell so stars sit behind the Earth.
+    const r = 18 + Math.random() * 22;
+    const u = Math.random() * 2 - 1;
+    const t = Math.random() * Math.PI * 2;
+    const s = Math.sqrt(1 - u * u);
+    pos[i * 3] = r * s * Math.cos(t);
+    pos[i * 3 + 1] = r * u;
+    pos[i * 3 + 2] = r * s * Math.sin(t);
   }
-  const geo = new THREE.BufferGeometry().setFromPoints(pts);
-  const mat = dashed
-    ? new THREE.LineDashedMaterial({
-        color: LINE,
-        dashSize: 0.06,
-        gapSize: 0.06,
-        transparent: true,
-        opacity: 0.9,
-      })
-    : new THREE.LineBasicMaterial({ color: LINE, transparent: true, opacity: 0.9 });
-  const line = new THREE.Line(geo, mat);
-  if (dashed) line.computeLineDistances();
-  line.rotation.x = tilt;
-  return line;
+  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  const mat = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 0.08,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.8,
+  });
+  return new THREE.Points(geo, mat);
 }
 
 export default function Globe({
@@ -68,107 +66,160 @@ export default function Globe({
     if (!mount) return;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-    camera.position.set(0, 0.4, 3.4);
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(0, 0.6, 3.2);
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(0x000000, 0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
     mount.appendChild(renderer.domElement);
 
-    // Lights — soft, for a faint sphere shade.
-    scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-    const dir = new THREE.DirectionalLight(0xffffff, 0.5);
-    dir.position.set(2, 1.5, 2);
-    scene.add(dir);
+    // ── Textures ────────────────────────────────────────────
+    const loader = new THREE.TextureLoader();
+    const dayMap = loader.load("/textures/earth_atmos_2048.jpg");
+    dayMap.colorSpace = THREE.SRGBColorSpace;
+    dayMap.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    const specMap = loader.load("/textures/earth_specular_2048.jpg");
+    const normalMap = loader.load("/textures/earth_normal_2048.jpg");
+    const cloudMap = loader.load("/textures/earth_clouds_1024.png");
 
-    // Globe + graticule.
-    const globe = new THREE.Mesh(
-      new THREE.SphereGeometry(1, 48, 48),
-      new THREE.MeshStandardMaterial({
-        color: GLOBE,
-        roughness: 1,
-        metalness: 0,
+    // ── Lights ──────────────────────────────────────────────
+    scene.add(new THREE.AmbientLight(0xffffff, 0.22));
+    const sun = new THREE.DirectionalLight(0xfff3e6, 1.35);
+    sun.position.set(-3, 1.2, 1.4);
+    scene.add(sun);
+
+    // ── Earth (tilted group, self-rotating) ─────────────────
+    const earthGroup = new THREE.Group();
+    earthGroup.rotation.z = (23.4 * Math.PI) / 180;
+    scene.add(earthGroup);
+
+    const earth = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 64, 64),
+      new THREE.MeshPhongMaterial({
+        map: dayMap,
+        specularMap: specMap,
+        normalMap: normalMap,
+        normalScale: new THREE.Vector2(0.7, 0.7),
+        specular: new THREE.Color(0x2a3a55),
+        shininess: 14,
       }),
     );
-    scene.add(globe);
+    earthGroup.add(earth);
 
-    const graticule = new THREE.Mesh(
-      new THREE.SphereGeometry(1.002, 24, 16),
-      new THREE.MeshBasicMaterial({
-        color: LINE,
-        wireframe: true,
+    const clouds = new THREE.Mesh(
+      new THREE.SphereGeometry(1.012, 64, 64),
+      new THREE.MeshPhongMaterial({
+        alphaMap: cloudMap,
         transparent: true,
-        opacity: 0.55,
+        depthWrite: false,
+        opacity: 0.5,
       }),
     );
-    scene.add(graticule);
+    earthGroup.add(clouds);
 
-    // Orbital rings.
-    scene.add(makeRing(1.45, Math.PI / 2.3, false));
-    scene.add(makeRing(1.72, Math.PI / 1.9, true));
+    // ── Atmosphere glow (fresnel rim) ───────────────────────
+    const atmosphere = new THREE.Mesh(
+      new THREE.SphereGeometry(1.18, 64, 64),
+      new THREE.ShaderMaterial({
+        uniforms: {
+          glowColor: { value: new THREE.Color(0x5a8bff) },
+          viewVector: { value: camera.position },
+        },
+        vertexShader: `
+          uniform vec3 viewVector;
+          varying float intensity;
+          void main() {
+            vec3 vNormal = normalize(normalMatrix * normal);
+            vec3 vView = normalize(normalMatrix * viewVector);
+            intensity = pow(0.62 - dot(vNormal, vView), 4.0);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }`,
+        fragmentShader: `
+          uniform vec3 glowColor;
+          varying float intensity;
+          void main() {
+            gl_FragColor = vec4(glowColor, 1.0) * clamp(intensity, 0.0, 1.0);
+          }`,
+        side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+      }),
+    );
+    scene.add(atmosphere);
 
-    // Pins.
+    // ── Stars ───────────────────────────────────────────────
+    const stars = makeStars(900);
+    scene.add(stars);
+
+    // ── Pins (attached to the Earth so they spin with it) ───
     const pinMeshes: THREE.Mesh[] = [];
     const pulses: THREE.Mesh[] = [];
-    const dotGeo = new THREE.SphereGeometry(0.028, 16, 16);
+    const dotGeo = new THREE.SphereGeometry(0.022, 16, 16);
     const dotMat = new THREE.MeshBasicMaterial({ color: ACCENT });
-    const ringGeo = new THREE.RingGeometry(0.04, 0.052, 24);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: ACCENT,
-      transparent: true,
-      opacity: 0.6,
-      side: THREE.DoubleSide,
-    });
+    const stickMat = new THREE.MeshBasicMaterial({ color: ACCENT });
+    const ringGeo = new THREE.RingGeometry(0.035, 0.05, 24);
 
     for (const pin of pins) {
       if (pin.lat == null || pin.lng == null) continue;
-      if (pin.lat === 0 && pin.lng === 0) continue; // unset coords
-      const pos = latLngToVec3(pin.lat, pin.lng, 1.02);
-      const normal = pos.clone().normalize();
+      if (pin.lat === 0 && pin.lng === 0) continue;
+      const surface = latLngToVec3(pin.lat, pin.lng, 1.0);
+      const outer = latLngToVec3(pin.lat, pin.lng, 1.06);
+      const normal = surface.clone().normalize();
+
+      // little stalk from the surface
+      const stick = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.004, 0.004, 0.06, 6),
+        stickMat,
+      );
+      stick.position.copy(surface.clone().lerp(outer, 0.5));
+      stick.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+      earthGroup.add(stick);
 
       const dot = new THREE.Mesh(dotGeo, dotMat);
-      dot.position.copy(pos);
+      dot.position.copy(outer);
       dot.userData.pin = pin;
-      scene.add(dot);
+      earthGroup.add(dot);
       pinMeshes.push(dot);
 
-      const ring = new THREE.Mesh(ringGeo, ringMat.clone());
-      ring.position.copy(pos);
-      ring.lookAt(normal.clone().multiplyScalar(2)); // face outward
-      ring.userData.base = pos.clone();
-      scene.add(ring);
+      const ring = new THREE.Mesh(
+        ringGeo,
+        new THREE.MeshBasicMaterial({
+          color: ACCENT,
+          transparent: true,
+          opacity: 0.6,
+          side: THREE.DoubleSide,
+          blending: THREE.AdditiveBlending,
+        }),
+      );
+      ring.position.copy(outer);
+      ring.lookAt(normal.clone().multiplyScalar(2));
+      earthGroup.add(ring);
       pulses.push(ring);
     }
 
+    // ── Controls ────────────────────────────────────────────
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableZoom = false;
     controls.enablePan = false;
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.45;
     controls.rotateSpeed = 0.5;
+    controls.minDistance = 2.2;
+    controls.maxDistance = 5;
 
-    // Pause auto-rotate while interacting.
-    controls.addEventListener("start", () => (controls.autoRotate = false));
-    let resumeTimer: ReturnType<typeof setTimeout>;
-    controls.addEventListener("end", () => {
-      clearTimeout(resumeTimer);
-      resumeTimer = setTimeout(() => (controls.autoRotate = true), 2500);
-    });
-
-    // Tap detection → pin hit test.
+    // ── Tap detection → pin hit test ────────────────────────
     const raycaster = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
     let down: { x: number; y: number } | null = null;
-
     const onDown = (e: PointerEvent) => (down = { x: e.clientX, y: e.clientY });
     const onUp = (e: PointerEvent) => {
       if (!down) return;
       const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
       down = null;
-      if (moved > 8) return; // was a drag
+      if (moved > 8) return;
       const rect = renderer.domElement.getBoundingClientRect();
       ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
       ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
@@ -179,7 +230,7 @@ export default function Globe({
     renderer.domElement.addEventListener("pointerdown", onDown);
     renderer.domElement.addEventListener("pointerup", onUp);
 
-    // Size to container.
+    // ── Resize ──────────────────────────────────────────────
     const resize = () => {
       const w = mount.clientWidth;
       const h = mount.clientHeight;
@@ -192,17 +243,20 @@ export default function Globe({
     const ro = new ResizeObserver(resize);
     ro.observe(mount);
 
-    // Animate.
+    // ── Animate ─────────────────────────────────────────────
     let raf = 0;
     const clock = new THREE.Clock();
     const tick = () => {
       raf = requestAnimationFrame(tick);
-      const t = clock.getElapsedTime();
-      const s = 1 + Math.sin(t * 2) * 0.35;
+      const dt = clock.getDelta();
+      const t = clock.elapsedTime;
+      earthGroup.rotation.y += dt * 0.05;
+      clouds.rotation.y += dt * 0.012;
+      stars.rotation.y += dt * 0.005;
+      const s = 1 + Math.sin(t * 2) * 0.4;
       for (const ring of pulses) {
         ring.scale.setScalar(s);
-        (ring.material as THREE.MeshBasicMaterial).opacity =
-          0.5 - (s - 1) * 0.6;
+        (ring.material as THREE.MeshBasicMaterial).opacity = 0.55 - (s - 1) * 0.7;
       }
       controls.update();
       renderer.render(scene, camera);
@@ -211,19 +265,19 @@ export default function Globe({
 
     return () => {
       cancelAnimationFrame(raf);
-      clearTimeout(resumeTimer);
       ro.disconnect();
       controls.dispose();
       renderer.domElement.removeEventListener("pointerdown", onDown);
       renderer.domElement.removeEventListener("pointerup", onUp);
-      renderer.dispose();
+      [dayMap, specMap, normalMap, cloudMap].forEach((t) => t.dispose());
       scene.traverse((o) => {
-        const m = o as THREE.Mesh;
+        const m = o as THREE.Mesh & THREE.Points;
         m.geometry?.dispose?.();
-        const mat = m.material;
+        const mat = (m as THREE.Mesh).material;
         if (Array.isArray(mat)) mat.forEach((x) => x.dispose());
         else mat?.dispose?.();
       });
+      renderer.dispose();
       if (renderer.domElement.parentNode === mount)
         mount.removeChild(renderer.domElement);
     };
