@@ -32,7 +32,7 @@ export function GlobePanel({ pins }: { pins: GlobePinFull[] }) {
         className="relative h-[52vh] w-full overflow-hidden border-y border-border"
         style={{
           background:
-            "radial-gradient(circle at 50% 38%, #111c30 0%, #0a0f1a 55%, #06080f 100%)",
+            "radial-gradient(circle at 50% 42%, #0a0e15 0%, #05070a 60%, #000000 100%)",
         }}
       >
         <Globe

@@ -14,6 +14,9 @@ export interface GlobePin {
 }
 
 const ACCENT = 0xf25623;
+const DOT = 0xb9c1cc;
+const GRID = 0x46505f;
+const BG = 0x05070a;
 
 /** lat/lng (degrees) → point on a sphere of the given radius. */
 function latLngToVec3(lat: number, lng: number, r: number) {
@@ -26,28 +29,47 @@ function latLngToVec3(lat: number, lng: number, r: number) {
   );
 }
 
-function makeStars(count: number) {
-  const geo = new THREE.BufferGeometry();
-  const pos = new Float32Array(count * 3);
-  for (let i = 0; i < count; i++) {
-    // Distribute on a large shell so stars sit behind the Earth.
-    const r = 18 + Math.random() * 22;
-    const u = Math.random() * 2 - 1;
-    const t = Math.random() * Math.PI * 2;
-    const s = Math.sqrt(1 - u * u);
-    pos[i * 3] = r * s * Math.cos(t);
-    pos[i * 3 + 1] = r * u;
-    pos[i * 3 + 2] = r * s * Math.sin(t);
-  }
-  geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  const mat = new THREE.PointsMaterial({
-    color: 0xffffff,
-    size: 0.08,
-    sizeAttenuation: true,
+/** Soft round sprite for the land dots. */
+function makeDotTexture() {
+  const s = 64;
+  const c = document.createElement("canvas");
+  c.width = c.height = s;
+  const ctx = c.getContext("2d")!;
+  const g = ctx.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.55, "rgba(255,255,255,0.85)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(s / 2, s / 2, s / 2, 0, Math.PI * 2);
+  ctx.fill();
+  return new THREE.CanvasTexture(c);
+}
+
+/** Latitude/longitude graticule as thin line loops. */
+function makeGraticule() {
+  const group = new THREE.Group();
+  const mat = new THREE.LineBasicMaterial({
+    color: GRID,
     transparent: true,
-    opacity: 0.8,
+    opacity: 0.85,
   });
-  return new THREE.Points(geo, mat);
+  const seg = 128;
+  // Parallels (latitude circles)
+  for (let lat = -75; lat <= 75; lat += 15) {
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= seg; i++)
+      pts.push(latLngToVec3(lat, -180 + (360 * i) / seg, 1));
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+  }
+  // Meridians (longitude half-circles)
+  for (let lng = -180; lng < 180; lng += 15) {
+    const pts: THREE.Vector3[] = [];
+    for (let i = 0; i <= seg; i++)
+      pts.push(latLngToVec3(-90 + (180 * i) / seg, lng, 1));
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), mat));
+  }
+  return group;
 }
 
 export default function Globe({
@@ -64,142 +86,141 @@ export default function Globe({
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
+    let disposed = false;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-    camera.position.set(0, 0.6, 3.2);
+    const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100);
+    camera.position.set(0, 0.15, 4.4);
 
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(0x000000, 0);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
     mount.appendChild(renderer.domElement);
 
-    // ── Textures ────────────────────────────────────────────
-    const loader = new THREE.TextureLoader();
-    const dayMap = loader.load("/textures/earth_atmos_2048.jpg");
-    dayMap.colorSpace = THREE.SRGBColorSpace;
-    dayMap.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    const specMap = loader.load("/textures/earth_specular_2048.jpg");
-    const normalMap = loader.load("/textures/earth_normal_2048.jpg");
-    const cloudMap = loader.load("/textures/earth_clouds_1024.png");
+    // Rotating world (dots + grid + pins + occluder all spin together).
+    const world = new THREE.Group();
+    world.rotation.z = (12 * Math.PI) / 180;
+    scene.add(world);
 
-    // ── Lights ──────────────────────────────────────────────
-    scene.add(new THREE.AmbientLight(0xffffff, 0.22));
-    const sun = new THREE.DirectionalLight(0xfff3e6, 1.35);
-    sun.position.set(-3, 1.2, 1.4);
-    scene.add(sun);
-
-    // ── Earth (tilted group, self-rotating) ─────────────────
-    const earthGroup = new THREE.Group();
-    earthGroup.rotation.z = (23.4 * Math.PI) / 180;
-    scene.add(earthGroup);
-
-    const earth = new THREE.Mesh(
-      new THREE.SphereGeometry(1, 64, 64),
-      new THREE.MeshPhongMaterial({
-        map: dayMap,
-        specularMap: specMap,
-        normalMap: normalMap,
-        normalScale: new THREE.Vector2(0.7, 0.7),
-        specular: new THREE.Color(0x2a3a55),
-        shininess: 14,
-      }),
+    // Occluder: a near-black sphere just under the dots so the far hemisphere
+    // is hidden, giving a solid globe.
+    const occluder = new THREE.Mesh(
+      new THREE.SphereGeometry(0.985, 48, 48),
+      new THREE.MeshBasicMaterial({ color: BG }),
     );
-    earthGroup.add(earth);
+    world.add(occluder);
 
-    const clouds = new THREE.Mesh(
-      new THREE.SphereGeometry(1.012, 64, 64),
-      new THREE.MeshPhongMaterial({
-        alphaMap: cloudMap,
-        transparent: true,
-        depthWrite: false,
-        opacity: 0.5,
-      }),
-    );
-    earthGroup.add(clouds);
-
-    // ── Atmosphere glow (fresnel rim) ───────────────────────
-    const atmosphere = new THREE.Mesh(
-      new THREE.SphereGeometry(1.18, 64, 64),
+    // Faint rim/atmosphere for the silhouette edge.
+    const rim = new THREE.Mesh(
+      new THREE.SphereGeometry(1.13, 48, 48),
       new THREE.ShaderMaterial({
-        uniforms: {
-          glowColor: { value: new THREE.Color(0x5a8bff) },
-          viewVector: { value: camera.position },
-        },
+        uniforms: { glowColor: { value: new THREE.Color(0x3b4a63) } },
         vertexShader: `
-          uniform vec3 viewVector;
           varying float intensity;
-          void main() {
-            vec3 vNormal = normalize(normalMatrix * normal);
-            vec3 vView = normalize(normalMatrix * viewVector);
-            intensity = pow(0.62 - dot(vNormal, vView), 4.0);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          void main(){
+            vec3 n = normalize(normalMatrix * normal);
+            vec3 v = normalize(normalMatrix * vec3(0.0,0.0,1.0));
+            intensity = pow(0.55 - dot(n, v), 3.0);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
           }`,
         fragmentShader: `
-          uniform vec3 glowColor;
-          varying float intensity;
-          void main() {
-            gl_FragColor = vec4(glowColor, 1.0) * clamp(intensity, 0.0, 1.0);
-          }`,
+          uniform vec3 glowColor; varying float intensity;
+          void main(){ gl_FragColor = vec4(glowColor,1.0) * clamp(intensity,0.0,1.0); }`,
         side: THREE.BackSide,
         blending: THREE.AdditiveBlending,
         transparent: true,
       }),
     );
-    scene.add(atmosphere);
+    scene.add(rim);
 
-    // ── Stars ───────────────────────────────────────────────
-    const stars = makeStars(900);
-    scene.add(stars);
+    world.add(makeGraticule());
 
-    // ── Pins (attached to the Earth so they spin with it) ───
+    // Pins (added immediately; dots come after the land mask loads).
     const pinMeshes: THREE.Mesh[] = [];
     const pulses: THREE.Mesh[] = [];
-    const dotGeo = new THREE.SphereGeometry(0.022, 16, 16);
-    const dotMat = new THREE.MeshBasicMaterial({ color: ACCENT });
-    const stickMat = new THREE.MeshBasicMaterial({ color: ACCENT });
-    const ringGeo = new THREE.RingGeometry(0.035, 0.05, 24);
-
+    const dotGeo = new THREE.SphereGeometry(0.02, 16, 16);
+    const pinMat = new THREE.MeshBasicMaterial({ color: ACCENT });
+    const ringGeo = new THREE.RingGeometry(0.032, 0.046, 24);
     for (const pin of pins) {
       if (pin.lat == null || pin.lng == null) continue;
       if (pin.lat === 0 && pin.lng === 0) continue;
-      const surface = latLngToVec3(pin.lat, pin.lng, 1.0);
-      const outer = latLngToVec3(pin.lat, pin.lng, 1.06);
-      const normal = surface.clone().normalize();
-
-      // little stalk from the surface
-      const stick = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.004, 0.004, 0.06, 6),
-        stickMat,
-      );
-      stick.position.copy(surface.clone().lerp(outer, 0.5));
-      stick.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
-      earthGroup.add(stick);
-
-      const dot = new THREE.Mesh(dotGeo, dotMat);
-      dot.position.copy(outer);
+      const p = latLngToVec3(pin.lat, pin.lng, 1.01);
+      const normal = p.clone().normalize();
+      const dot = new THREE.Mesh(dotGeo, pinMat);
+      dot.position.copy(p);
       dot.userData.pin = pin;
-      earthGroup.add(dot);
+      world.add(dot);
       pinMeshes.push(dot);
-
       const ring = new THREE.Mesh(
         ringGeo,
         new THREE.MeshBasicMaterial({
           color: ACCENT,
           transparent: true,
-          opacity: 0.6,
+          opacity: 0.7,
           side: THREE.DoubleSide,
           blending: THREE.AdditiveBlending,
         }),
       );
-      ring.position.copy(outer);
+      ring.position.copy(p);
       ring.lookAt(normal.clone().multiplyScalar(2));
-      earthGroup.add(ring);
+      world.add(ring);
       pulses.push(ring);
     }
+
+    // ── Build land dots by sampling the Earth texture ───────
+    const dotTex = makeDotTexture();
+    const img = new Image();
+    img.src = "/textures/earth_atmos_2048.jpg";
+    img.onload = () => {
+      if (disposed) return;
+      const cv = document.createElement("canvas");
+      cv.width = img.width;
+      cv.height = img.height;
+      const ctx = cv.getContext("2d")!;
+      ctx.drawImage(img, 0, 0);
+      const data = ctx.getImageData(0, 0, cv.width, cv.height).data;
+
+      const isLand = (lat: number, lng: number) => {
+        const u = (lng + 180) / 360;
+        const v = (90 - lat) / 180;
+        const x = Math.min(cv.width - 1, Math.floor(u * cv.width));
+        const y = Math.min(cv.height - 1, Math.floor(v * cv.height));
+        const i = (y * cv.width + x) * 4;
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        // land = bright enough and not deep blue ocean
+        return lum > 58 && !(b > r + 16 && lum < 95);
+      };
+
+      const positions: number[] = [];
+      const step = 1.7;
+      for (let lat = -85; lat <= 85; lat += step) {
+        for (let lng = -180; lng < 180; lng += step) {
+          if (isLand(lat, lng)) {
+            const p = latLngToVec3(lat, lng, 1.0);
+            positions.push(p.x, p.y, p.z);
+          }
+        }
+      }
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(positions, 3),
+      );
+      const mat = new THREE.PointsMaterial({
+        map: dotTex,
+        color: DOT,
+        size: 0.02,
+        sizeAttenuation: true,
+        transparent: true,
+        depthWrite: false,
+        opacity: 0.95,
+      });
+      world.add(new THREE.Points(geo, mat));
+    };
 
     // ── Controls ────────────────────────────────────────────
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -207,10 +228,10 @@ export default function Globe({
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.rotateSpeed = 0.5;
-    controls.minDistance = 2.2;
-    controls.maxDistance = 5;
+    controls.minDistance = 3;
+    controls.maxDistance = 7;
 
-    // ── Tap detection → pin hit test ────────────────────────
+    // ── Tap → pin hit test ──────────────────────────────────
     const raycaster = new THREE.Raycaster();
     const ndc = new THREE.Vector2();
     let down: { x: number; y: number } | null = null;
@@ -235,7 +256,7 @@ export default function Globe({
       const w = mount.clientWidth;
       const h = mount.clientHeight;
       if (!w || !h) return;
-      renderer.setSize(w, h, false);
+      renderer.setSize(w, h);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
     };
@@ -250,13 +271,11 @@ export default function Globe({
       raf = requestAnimationFrame(tick);
       const dt = clock.getDelta();
       const t = clock.elapsedTime;
-      earthGroup.rotation.y += dt * 0.05;
-      clouds.rotation.y += dt * 0.012;
-      stars.rotation.y += dt * 0.005;
+      world.rotation.y += dt * 0.06;
       const s = 1 + Math.sin(t * 2) * 0.4;
       for (const ring of pulses) {
         ring.scale.setScalar(s);
-        (ring.material as THREE.MeshBasicMaterial).opacity = 0.55 - (s - 1) * 0.7;
+        (ring.material as THREE.MeshBasicMaterial).opacity = 0.6 - (s - 1) * 0.7;
       }
       controls.update();
       renderer.render(scene, camera);
@@ -264,12 +283,13 @@ export default function Globe({
     tick();
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(raf);
       ro.disconnect();
       controls.dispose();
       renderer.domElement.removeEventListener("pointerdown", onDown);
       renderer.domElement.removeEventListener("pointerup", onUp);
-      [dayMap, specMap, normalMap, cloudMap].forEach((t) => t.dispose());
+      dotTex.dispose();
       scene.traverse((o) => {
         const m = o as THREE.Mesh & THREE.Points;
         m.geometry?.dispose?.();
