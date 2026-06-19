@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { acceptInvite } from "./actions";
+import { AcceptInviteForm } from "@/components/AcceptInviteForm";
 import { btnPrimary } from "@/lib/ui";
+import { MAX_CIRCLE_MEMBERS } from "@/types/index";
 
 export default async function InvitePage({
   params,
@@ -15,27 +16,33 @@ export default async function InvitePage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: couple } = await supabase
-    .from("couples")
-    .select("id, user1_id, user2_id")
+  const { data: circle } = await supabase
+    .from("circles")
+    .select("id, owner_id")
     .eq("invite_code", code.toUpperCase())
     .maybeSingle();
 
   let inviterName = "Someone";
-  if (couple) {
-    const { data: inviter } = await supabase
+  let memberCount = 0;
+  if (circle) {
+    const { data: owner } = await supabase
       .from("profiles")
       .select("display_name")
-      .eq("id", couple.user1_id)
+      .eq("id", circle.owner_id)
       .maybeSingle();
-    inviterName = inviter?.display_name ?? "Your partner";
+    inviterName = owner?.display_name ?? "Someone";
+    const { count } = await supabase
+      .from("circle_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("circle_id", circle.id);
+    memberCount = count ?? 0;
   }
 
-  const accept = acceptInvite.bind(null, code);
+  const full = memberCount >= MAX_CIRCLE_MEMBERS;
 
   return (
     <main className="flex min-h-dvh flex-col justify-center px-page">
-      {!couple ? (
+      {!circle ? (
         <div>
           <span className="index-num">INVITE</span>
           <h1 className="mt-3 text-display">Invalid link</h1>
@@ -50,24 +57,28 @@ export default async function InvitePage({
         <div>
           <span className="index-num">INVITE</span>
           <h1 className="mt-3 max-w-[16ch] text-display text-balance">
-            {inviterName} invited you to MemoryPin
+            {inviterName} invited you to their MemoryPin circle
           </h1>
           <p className="mt-3 max-w-sm text-body text-muted">
-            Connect to start mapping travel memories together.
+            Join to share travel memories together — up to{" "}
+            {MAX_CIRCLE_MEMBERS} people per circle.
+          </p>
+          <p className="mt-2 font-mono text-micro tabular-nums text-muted">
+            {memberCount} / {MAX_CIRCLE_MEMBERS} members
           </p>
 
-          {user ? (
-            <form action={accept} className="mt-7">
-              <button className={`${btnPrimary} w-full`}>
-                Accept &amp; connect
-              </button>
-            </form>
+          {full ? (
+            <p className="mt-7 text-body text-accent">
+              This circle is already full.
+            </p>
+          ) : user ? (
+            <AcceptInviteForm code={code} />
           ) : (
             <Link
               href={`/login?redirect=/invite/${code}`}
               className={`${btnPrimary} mt-7 w-full`}
             >
-              Sign up to accept
+              Sign up to join
             </Link>
           )}
         </div>

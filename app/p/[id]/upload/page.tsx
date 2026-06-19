@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCouple } from "@/lib/auth";
+import { getCircle } from "@/lib/auth";
 import { UploadForm } from "@/components/pin/UploadForm";
 
 export const dynamic = "force-dynamic";
@@ -20,14 +20,14 @@ export default async function UploadPage({
 
   const { data: pin } = await supabase
     .from("pins")
-    .select("id, title, couple_id")
+    .select("id, title, circle_id")
     .eq("id", id)
     .maybeSingle();
   if (!pin) notFound();
 
-  // Only couple members may add memories.
-  const couple = await getCouple(user.id);
-  if (!couple || couple.id !== pin.couple_id) {
+  // Only circle members may add memories.
+  const circle = await getCircle(user.id);
+  if (!circle || circle.id !== pin.circle_id) {
     redirect(`/p/${id}`);
   }
 

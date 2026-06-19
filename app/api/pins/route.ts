@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getCouple } from "@/lib/auth";
+import { getCircle } from "@/lib/auth";
 import { pinId } from "@/lib/nanoid";
 import { createPinSchema } from "@/lib/validation";
 
@@ -14,13 +14,13 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const couple = await getCouple(user.id);
-  if (!couple) return NextResponse.json({ pins: [] });
+  const circle = await getCircle(user.id);
+  if (!circle) return NextResponse.json({ pins: [] });
 
   const { data, error } = await supabase
     .from("pins")
     .select("*")
-    .eq("couple_id", couple.id)
+    .eq("circle_id", circle.id)
     .order("visit_date", { ascending: false, nullsFirst: false });
 
   if (error) {
@@ -39,10 +39,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const couple = await getCouple(user.id);
-  if (!couple) {
+  const circle = await getCircle(user.id);
+  if (!circle) {
     return NextResponse.json(
-      { error: "Create a couple before adding pins." },
+      { error: "No circle found for this account." },
       { status: 400 },
     );
   }
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
   const id = pinId();
   const { error } = await supabase.from("pins").insert({
     id,
-    couple_id: couple.id,
+    circle_id: circle.id,
     created_by: user.id,
     title: input.title,
     city: input.city || null,

@@ -2,16 +2,15 @@
 // MemoryPin shared types
 //
 // `Database` is a hand-written subset matching supabase/migrations/001_initial.sql.
-// Once the schema stabilises you can replace it with generated types via:
-//   supabase gen types typescript --project-id <id> > types/database.ts
+// Row types MUST be `type` aliases (not `interface`) — supabase-js's GenericTable
+// constraint requires Record<string, unknown>, which interfaces don't satisfy;
+// using interfaces silently degrades every query to `never`.
 // ─────────────────────────────────────────────────────────────
 
 export type MemoryType = "photo" | "video" | "note";
 
-// NOTE: these are `type` aliases (not `interface`) on purpose — supabase-js's
-// GenericTable constraint requires Row/Insert/Update to satisfy
-// Record<string, unknown>, which interfaces do not (no implicit index
-// signature). Using interfaces here silently degrades every query to `never`.
+export const MAX_CIRCLE_MEMBERS = 4;
+
 export type Profile = {
   id: string;
   display_name: string | null;
@@ -19,17 +18,23 @@ export type Profile = {
   created_at: string;
 };
 
-export type Couple = {
+export type Circle = {
   id: string;
-  user1_id: string;
-  user2_id: string | null;
+  owner_id: string;
+  name: string | null;
   invite_code: string;
   created_at: string;
 };
 
+export type CircleMember = {
+  circle_id: string;
+  user_id: string;
+  joined_at: string;
+};
+
 export type Pin = {
   id: string;
-  couple_id: string | null;
+  circle_id: string | null;
   created_by: string | null;
   title: string;
   city: string | null;
@@ -74,10 +79,16 @@ export interface Database {
         Update: Partial<Profile>;
         Relationships: [];
       };
-      couples: {
-        Row: Couple;
-        Insert: Insert<Couple, "id" | "invite_code" | "created_at" | "user2_id">;
-        Update: Partial<Couple>;
+      circles: {
+        Row: Circle;
+        Insert: Insert<Circle, "id" | "invite_code" | "created_at" | "name">;
+        Update: Partial<Circle>;
+        Relationships: [];
+      };
+      circle_members: {
+        Row: CircleMember;
+        Insert: Insert<CircleMember, "joined_at">;
+        Update: Partial<CircleMember>;
         Relationships: [];
       };
       pins: {
@@ -122,14 +133,10 @@ export interface Database {
     };
     Views: Record<never, never>;
     Functions: {
-      user_in_couple: {
-        Args: { pin_couple_id: string };
-        Returns: boolean;
-      };
-      increment_pin_view: {
-        Args: { p_id: string };
-        Returns: undefined;
-      };
+      user_in_circle: { Args: { c_id: string }; Returns: boolean };
+      shares_circle: { Args: { other_id: string }; Returns: boolean };
+      join_circle: { Args: { p_code: string }; Returns: string };
+      increment_pin_view: { Args: { p_id: string }; Returns: undefined };
     };
     Enums: {
       memory_type: MemoryType;
@@ -165,4 +172,12 @@ export interface PinWithMemories extends Pin {
   memories: Memory[];
   cover?: Memory;
   memory_count: number;
+}
+
+// A circle member enriched with their display name.
+export interface CircleMemberView {
+  user_id: string;
+  display_name: string | null;
+  is_owner: boolean;
+  is_self: boolean;
 }

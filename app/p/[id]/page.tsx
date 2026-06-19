@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Plus, SlidersHorizontal } from "lucide-react";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { getCouple } from "@/lib/auth";
+import { getCircle } from "@/lib/auth";
 import { heroUrl } from "@/lib/cloudinary";
 import { PhotoGrid } from "@/components/pin/PhotoGrid";
 import { StorySection } from "@/components/pin/StorySection";
@@ -49,8 +49,8 @@ export default async function PinPage({
   } = await supabase.auth.getUser();
   let isMember = false;
   if (user) {
-    const couple = await getCouple(user.id);
-    isMember = !!couple && couple.id === pin.couple_id;
+    const circle = await getCircle(user.id);
+    isMember = !!circle && circle.id === pin.circle_id;
   }
 
   const svc = createServiceClient();

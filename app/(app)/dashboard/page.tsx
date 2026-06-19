@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Settings, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getCouple } from "@/lib/auth";
+import { getCircle } from "@/lib/auth";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { PinCard } from "@/components/pin/PinCard";
 import { GlobePanel, type GlobePinFull } from "@/components/dashboard/GlobePanel";
@@ -18,13 +18,14 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const couple = await getCouple(user.id);
-  if (!couple) redirect("/settings");
+  // Solo works out of the box — no setup required.
+  const circle = await getCircle(user.id);
+  if (!circle) redirect("/login");
 
   const { data: pins } = await supabase
     .from("pins")
     .select("*")
-    .eq("couple_id", couple.id)
+    .eq("circle_id", circle.id)
     .order("visit_date", { ascending: false, nullsFirst: false });
 
   const pinList: Pin[] = pins ?? [];

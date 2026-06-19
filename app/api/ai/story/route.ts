@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getCouple } from "@/lib/auth";
+import { getCircle } from "@/lib/auth";
 import { generateTravelStory } from "@/lib/claude";
 
 /**
@@ -32,15 +32,15 @@ export async function POST(request: NextRequest) {
 
   const { data: pin } = await supabase
     .from("pins")
-    .select("id, title, city, visit_date, couple_id")
+    .select("id, title, city, visit_date, circle_id")
     .eq("id", pinId)
     .maybeSingle();
   if (!pin) {
     return NextResponse.json({ error: "Pin not found" }, { status: 404 });
   }
 
-  const couple = await getCouple(user.id);
-  if (!couple || couple.id !== pin.couple_id) {
+  const circle = await getCircle(user.id);
+  if (!circle || circle.id !== pin.circle_id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

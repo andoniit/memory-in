@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getCouple } from "@/lib/auth";
-import { createCouple, updateProfile, signOut } from "./actions";
+import { getCircle, getCircleMembers } from "@/lib/auth";
+import { updateProfile, signOut } from "./actions";
 import { InviteLink } from "@/components/InviteLink";
 import { btnPrimary, btnSecondary, field } from "@/lib/ui";
+import { MAX_CIRCLE_MEMBERS } from "@/types/index";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -19,24 +20,12 @@ export default async function SettingsPage() {
     .eq("id", user.id)
     .maybeSingle();
 
-  const couple = await getCouple(user.id);
-
-  let partner: { display_name: string | null } | null = null;
-  if (couple) {
-    const partnerId =
-      couple.user1_id === user.id ? couple.user2_id : couple.user1_id;
-    if (partnerId) {
-      const { data } = await supabase
-        .from("profiles")
-        .select("display_name")
-        .eq("id", partnerId)
-        .maybeSingle();
-      partner = data;
-    }
-  }
+  const circle = await getCircle(user.id);
+  const members = circle ? await getCircleMembers(circle, user.id) : [];
+  const canInvite = !!circle && members.length < MAX_CIRCLE_MEMBERS;
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const inviteUrl = couple ? `${appUrl}/invite/${couple.invite_code}` : "";
+  const inviteUrl = circle ? `${appUrl}/invite/${circle.invite_code}` : "";
 
   return (
     <main className="mx-auto max-w-md px-page py-5">
@@ -51,7 +40,7 @@ export default async function SettingsPage() {
       </header>
 
       {/* Profile */}
-      <section className="mb-6">
+      <section className="mb-8">
         <p className="label mb-3">Profile</p>
         <form action={updateProfile} className="space-y-3">
           <input
@@ -64,34 +53,53 @@ export default async function SettingsPage() {
         </form>
       </section>
 
-      {/* Couple */}
+      {/* Circle */}
       <section className="mb-10">
-        <p className="label mb-3">Couple</p>
+        <div className="mb-3 flex items-center justify-between">
+          <p className="label">Your circle</p>
+          <span className="font-mono text-micro tabular-nums text-muted">
+            {members.length} / {MAX_CIRCLE_MEMBERS}
+          </span>
+        </div>
 
-        {!couple ? (
-          <form action={createCouple} className="rounded-card border border-border bg-surface p-5">
-            <p className="text-body text-muted">
-              Create a couple to share memories, then send the invite link to
-              your partner.
+        <div className="rounded-card border border-border bg-surface p-5">
+          <ul className="space-y-2">
+            {members.map((m) => (
+              <li
+                key={m.user_id}
+                className="flex items-center justify-between text-body"
+              >
+                <span>
+                  {m.display_name ?? "Member"}
+                  {m.is_self && (
+                    <span className="text-muted"> (you)</span>
+                  )}
+                </span>
+                {m.is_owner && <span className="label">Owner</span>}
+              </li>
+            ))}
+          </ul>
+
+          {canInvite ? (
+            <div className="mt-5 border-t border-border pt-5">
+              <p className="mb-3 text-caption text-muted">
+                Invite a partner or friends — share this link (up to{" "}
+                {MAX_CIRCLE_MEMBERS} total).
+              </p>
+              <InviteLink url={inviteUrl} />
+            </div>
+          ) : (
+            <p className="mt-4 text-caption text-muted">
+              Your circle is full.
             </p>
-            <button className={`${btnPrimary} mt-4`}>Create couple</button>
-          </form>
-        ) : partner ? (
-          <div className="rounded-card border border-border bg-surface p-5">
-            <p className="text-body">
-              Connected with{" "}
-              <span className="font-medium text-accent">
-                {partner.display_name ?? "your partner"}
-              </span>
-            </p>
-          </div>
-        ) : (
-          <div className="rounded-card border border-border bg-surface p-5">
-            <p className="mb-3 text-body text-muted">
-              Share this link with your partner to connect:
-            </p>
-            <InviteLink url={inviteUrl} />
-          </div>
+          )}
+        </div>
+
+        {members.length === 1 && (
+          <p className="mt-3 text-caption text-muted">
+            You&apos;re flying solo — that&apos;s perfectly fine. Invite people
+            anytime to share a map.
+          </p>
         )}
       </section>
 

@@ -5,7 +5,7 @@ import { postLoginPath } from "@/lib/auth";
 /**
  * Handles the magic-link / OAuth redirect: exchanges the `code` for a session,
  * then routes the user onward. `redirect` (when present) wins; otherwise we send
- * them to the dashboard or to /settings to create a couple.
+ * them to the dashboard (a personal circle is auto-created at signup).
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         redirect && redirect.startsWith("/")
           ? redirect
           : user
-            ? await postLoginPath(user.id)
+            ? await postLoginPath()
             : "/dashboard";
       return NextResponse.redirect(`${origin}${dest}`);
     }

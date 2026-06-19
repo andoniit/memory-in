@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { createClient } from "@/lib/supabase/server";
-import { getCouple } from "@/lib/auth";
+import { getCircle } from "@/lib/auth";
 
 /**
  * GET /api/upload-url
@@ -18,10 +18,10 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const couple = await getCouple(user.id);
-  if (!couple) {
+  const circle = await getCircle(user.id);
+  if (!circle) {
     return NextResponse.json(
-      { error: "Create a couple before uploading." },
+      { error: "No circle found for this account." },
       { status: 400 },
     );
   }
@@ -37,7 +37,7 @@ export async function GET() {
   }
 
   const timestamp = Math.round(Date.now() / 1000);
-  const folder = `memorypin/${couple.id}`;
+  const folder = `memorypin/${circle.id}`;
 
   // Sign exactly the params the client will send (besides file/api_key).
   const signature = cloudinary.utils.api_sign_request(

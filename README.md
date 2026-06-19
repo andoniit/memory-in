@@ -1,13 +1,13 @@
 # MemoryPin
 
-An NFC memory-map PWA — couples pin photos/videos to real-world locations and
-tap a physical NFC sticker to relive them. Built with Next.js 14 (App Router),
-Supabase, Cloudinary, and Tailwind.
+An NFC memory-map PWA — pin photos/videos to real-world locations and tap a
+physical NFC sticker to relive them. Use it solo, or invite a partner or friends
+to share a circle (up to 4 people). Built with Next.js 14 (App Router), Supabase,
+Cloudinary, Three.js, and Tailwind.
 
-> **Phase 1 (MVP)** is implemented: auth, couples, pin creation, the fast public
-> `/p/[id]` NFC landing page, media upload, and a dashboard pin list. The 3D
-> globe (Phase 2), AI stories + lightbox/video (Phase 3), and launch polish
-> (Phase 4) are not built yet.
+> **Sharing model:** every account gets a personal "circle" at signup, so the app
+> works solo with zero setup. The owner can invite a partner or friends via a
+> share link — up to 4 members per circle, all sharing the same pins.
 
 ## Setup
 
@@ -36,11 +36,12 @@ Supabase, Cloudinary, and Tailwind.
 
 ## The core loop
 
-1. Sign in (`/login`) → create a couple in `/settings` → share the invite link.
+1. Sign in (`/login`) → you're ready (a personal circle exists already).
 2. Create a pin (`/pin/new`) → copy the `…/p/<id>` URL onto an NTAG213 sticker
    with the **NFC Tools** app.
 3. Add photos/videos (`/p/<id>/upload`).
 4. Tap the sticker → the public `/p/<id>` page opens fast, no login needed.
+5. Optional: invite a partner or friends from `/settings` (up to 4 per circle).
 
 ## Notes
 

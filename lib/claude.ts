@@ -11,7 +11,7 @@ interface StoryInput {
 }
 
 /**
- * Generate a short, warm travel memory for a couple's scrapbook.
+ * Generate a short, warm travel memory for a personal scrapbook.
  * Uses Claude Opus 4.8 (current default model).
  */
 export async function generateTravelStory({
@@ -31,14 +31,14 @@ export async function generateTravelStory({
     ? captions.join("\n")
     : "(no captions provided)";
 
-  const prompt = `You are writing a short, warm travel memory for a couple's digital scrapbook.
+  const prompt = `You are writing a short, warm travel memory for someone's digital scrapbook.
 
 Location: ${city ?? title}
 Date: ${dateLabel}
 Memory captions:
 ${captionBlock}
 
-Write a 2-3 sentence travel story in first person plural ("we") that captures the feeling of this trip. Be specific, warm, and poetic. No more than 80 words. Do not use the words "unforgettable" or "magical". Return only the story text, with no preamble.`;
+Write a 2-3 sentence travel story in a warm, personal first-person voice that captures the feeling of this trip. Be specific, warm, and poetic. No more than 80 words. Do not use the words "unforgettable" or "magical". Return only the story text, with no preamble.`;
 
   const response = await client.messages.create({
     model: "claude-opus-4-8",

@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCouple } from "@/lib/auth";
+import { getCircle } from "@/lib/auth";
 import { PinManager } from "@/components/pin/PinManager";
 
 export const dynamic = "force-dynamic";
@@ -25,8 +25,8 @@ export default async function ManagePinPage({
     .maybeSingle();
   if (!pin) notFound();
 
-  const couple = await getCouple(user.id);
-  if (!couple || couple.id !== pin.couple_id) redirect(`/p/${id}`);
+  const circle = await getCircle(user.id);
+  if (!circle || circle.id !== pin.circle_id) redirect(`/p/${id}`);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
