@@ -5,9 +5,9 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getCouple } from "@/lib/auth";
 import { heroUrl } from "@/lib/cloudinary";
 import { PhotoGrid } from "@/components/pin/PhotoGrid";
+import { iconBtnGhost } from "@/lib/ui";
 import type { Memory } from "@/types/index";
 
-// Always render fresh so newly uploaded memories show on tap.
 export const dynamic = "force-dynamic";
 
 export default async function PinPage({
@@ -18,8 +18,6 @@ export default async function PinPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  // RLS: public pins read by anyone; private pins only if the caller's couple
-  // owns them (the authed cookie carries the session).
   const { data: pin } = await supabase
     .from("pins")
     .select("*")
@@ -27,7 +25,6 @@ export default async function PinPage({
     .maybeSingle();
 
   if (!pin) {
-    // Either it doesn't exist or it's private and the viewer isn't a member.
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -46,7 +43,6 @@ export default async function PinPage({
   const list: Memory[] = memories ?? [];
   const hero = list.find((m) => m.type === "photo") ?? list[0];
 
-  // Is the viewer a member of this pin's couple? (controls "Add memory")
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -56,7 +52,6 @@ export default async function PinPage({
     isMember = !!couple && couple.id === pin.couple_id;
   }
 
-  // Fire-and-forget-ish analytics (fast single update).
   const svc = createServiceClient();
   await Promise.allSettled([
     svc.rpc("increment_pin_view", { p_id: id }),
@@ -71,77 +66,78 @@ export default async function PinPage({
     : null;
 
   return (
-    <main className="min-h-dvh pb-24">
+    <main className="min-h-dvh pb-28">
       {/* Top bar */}
-      <div className="sticky top-0 z-10 flex items-center gap-2 bg-background/80 px-2 pt-safe backdrop-blur">
-        <Link
-          href="/dashboard"
-          aria-label="Back"
-          className="flex h-11 w-11 items-center justify-center rounded-full text-text-primary"
-        >
-          <ChevronLeft className="h-6 w-6" />
+      <div className="sticky top-0 z-10 flex items-center gap-1 bg-background/85 px-2 pt-safe backdrop-blur">
+        <Link href="/dashboard" aria-label="Back" className={iconBtnGhost}>
+          <ChevronLeft className="h-6 w-6" strokeWidth={1.75} />
         </Link>
-        <span className="truncate text-body font-medium">
-          {pin.emoji} {pin.city ?? pin.title}
+        <span className="truncate font-mono text-micro uppercase tracking-[0.14em] text-muted">
+          {pin.city ?? pin.title}
         </span>
       </div>
 
       {/* Hero */}
       <section className="relative">
         {hero?.type === "photo" && hero.cloudinary_id ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={heroUrl(hero.cloudinary_id)}
-            alt={pin.title}
-            className="h-[50vh] w-full object-cover"
-          />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={heroUrl(hero.cloudinary_id)}
+              alt={pin.title}
+              className="h-[52vh] w-full object-cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent px-page pb-6 pt-20">
+              <h1 className="text-display text-white">{pin.title}</h1>
+              <p className="mt-2 font-mono text-micro uppercase tracking-[0.14em] text-white/80">
+                {[pin.city, dateLabel].filter(Boolean).join(" / ")}
+              </p>
+            </div>
+          </>
         ) : (
-          <div className="flex h-[40vh] w-full items-center justify-center bg-surface text-6xl">
-            {pin.emoji}
+          <div className="flex h-[40vh] w-full flex-col items-center justify-center gap-3 bg-surface-2">
+            <span className="text-5xl opacity-40">{pin.emoji}</span>
+            <h1 className="text-heading">{pin.title}</h1>
           </div>
         )}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-background to-transparent p-page pt-16">
-          <h1 className="text-display">{pin.title}</h1>
-          <p className="mt-1 text-caption text-text-muted">
-            {[pin.city, dateLabel].filter(Boolean).join(" · ")}
-          </p>
-          <p className="mt-1 text-caption text-accent-2">
-            💕 {list.length} {list.length === 1 ? "memory" : "memories"}
-          </p>
-        </div>
       </section>
+
+      {/* Meta row */}
+      <div className="flex items-center justify-between border-b border-border px-page py-4">
+        <span className="label">
+          {list.length} {list.length === 1 ? "memory" : "memories"}
+        </span>
+        <span className="font-mono text-micro tabular-nums text-muted">
+          {String(pin.view_count).padStart(3, "0")} views
+        </span>
+      </div>
 
       {/* AI story */}
       {pin.story && (
-        <section className="px-page py-5">
-          <h2 className="mb-2 text-micro uppercase tracking-wide text-text-muted">
-            Our story
-          </h2>
-          <p className="text-body italic leading-relaxed">{pin.story}</p>
+        <section className="border-b border-border px-page py-6">
+          <p className="label mb-3">Story</p>
+          <p className="text-body leading-relaxed">{pin.story}</p>
         </section>
       )}
 
       {/* Memories */}
-      <section className="py-3">
-        <h2 className="mb-2 px-page text-micro uppercase tracking-wide text-text-muted">
-          All memories
-        </h2>
+      <section className="py-5">
+        <p className="label mb-3 px-page">All memories</p>
         {list.length > 0 ? (
           <PhotoGrid memories={list} />
         ) : (
-          <p className="px-page text-caption text-text-muted">
+          <p className="px-page text-body text-muted">
             No memories yet — be the first to add one.
           </p>
         )}
       </section>
 
-      {/* Add memory — visible to couple members, or to signed-out visitors who
-          may sign in to contribute. */}
+      {/* Add memory */}
       {(isMember || !user) && (
-        <div className="fixed inset-x-0 bottom-0 z-10 bg-gradient-to-t from-background to-transparent p-page pb-safe">
+        <div className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface/95 p-page pb-[calc(env(safe-area-inset-bottom)+16px)] backdrop-blur">
           <Link
             href={`/p/${id}/upload`}
-            className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-accent-2 text-body font-medium text-[#0a0f1e]"
+            className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-ctl bg-accent text-body font-medium text-white transition-colors hover:bg-accent-strong"
           >
             <Plus className="h-5 w-5" /> Add your memory
           </Link>

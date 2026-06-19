@@ -22,21 +22,23 @@ export function BottomNav() {
             key={label}
             href={href}
             className={cn(
-              "flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 text-micro",
-              active ? "text-accent" : "text-text-muted",
+              "flex min-h-[60px] flex-1 flex-col items-center justify-center gap-1",
+              active ? "text-accent" : "text-muted",
             )}
           >
-            <Icon className="h-5 w-5" />
-            {label}
+            <Icon className="h-5 w-5" strokeWidth={1.75} />
+            <span className="font-mono text-[0.625rem] uppercase tracking-[0.12em]">
+              {label}
+            </span>
           </Link>
         );
       })}
       <Link
         href="/pin/new"
         aria-label="New pin"
-        className="flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 text-micro text-accent-2"
+        className="flex min-h-[60px] flex-1 flex-col items-center justify-center"
       >
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-2 text-[#0a0f1e]">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent text-white transition-colors hover:bg-accent-strong">
           <Plus className="h-5 w-5" />
         </span>
       </Link>

@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getCouple } from "@/lib/auth";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { PinCard } from "@/components/pin/PinCard";
+import { GlobePanel, type GlobePinFull } from "@/components/dashboard/GlobePanel";
+import { iconBtnGhost } from "@/lib/ui";
 import type { Memory, Pin, PinWithMemories } from "@/types/index";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +29,6 @@ export default async function DashboardPage() {
 
   const pinList: Pin[] = pins ?? [];
 
-  // One query for all memories across the couple's pins, then group in JS.
   let byPin = new Map<string, Memory[]>();
   if (pinList.length > 0) {
     const { data: memories } = await supabase
@@ -56,33 +57,42 @@ export default async function DashboardPage() {
     };
   });
 
+  const globePins: GlobePinFull[] = enriched.map((p) => ({
+    id: p.id,
+    lat: p.lat,
+    lng: p.lng,
+    title: p.title,
+    city: p.city,
+    emoji: p.emoji,
+    thumb_url: p.cover?.thumb_url ?? null,
+    memory_count: p.memory_count,
+  }));
+
   return (
-    <main className="min-h-dvh pb-24">
+    <main className="min-h-dvh pb-28">
       {/* Top bar */}
-      <header className="flex items-center justify-between px-page pt-safe">
-        <div className="py-3">
-          <span className="text-heading">MemoryPin</span>
+      <header className="flex items-center justify-between px-page py-4">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-accent" />
+          <span className="font-mono text-micro uppercase tracking-[0.2em]">
+            MemoryPin
+          </span>
         </div>
-        <Link
-          href="/settings"
-          aria-label="Settings"
-          className="flex h-11 w-11 items-center justify-center rounded-full text-text-muted"
-        >
-          <Settings className="h-5 w-5" />
+        <Link href="/settings" aria-label="Settings" className={iconBtnGhost}>
+          <Settings className="h-5 w-5" strokeWidth={1.75} />
         </Link>
       </header>
 
-      {/* Globe placeholder (Phase 2) */}
-      <section
-        id="globe"
-        className="mx-page flex h-40 items-center justify-center rounded-2xl border border-border bg-surface text-caption text-text-muted"
-      >
-        🌍 Your globe lands in Phase 2
-      </section>
+      {/* Globe */}
+      <GlobePanel pins={globePins} />
 
-      <h2 className="px-page pb-2 pt-5 text-micro uppercase tracking-wide text-text-muted">
-        Your memories
-      </h2>
+      {/* Pin list */}
+      <div className="flex items-center justify-between border-t border-border px-page pb-3 pt-6">
+        <span className="label">Your memories</span>
+        <span className="font-mono text-micro tabular-nums text-muted">
+          {String(enriched.length).padStart(2, "0")}
+        </span>
+      </div>
 
       {enriched.length > 0 ? (
         <div className="grid grid-cols-2 gap-3 px-page">
@@ -91,14 +101,15 @@ export default async function DashboardPage() {
           ))}
         </div>
       ) : (
-        <div className="px-page py-10 text-center">
+        <div className="px-page py-12 text-center">
           <p className="text-body">No pins yet.</p>
-          <p className="mt-1 text-caption text-text-muted">
-            Create your first memory pin and program an NFC sticker.
+          <p className="mx-auto mt-1 max-w-xs text-body text-muted">
+            Create your first memory pin, then program an NFC sticker with its
+            link.
           </p>
           <Link
             href="/pin/new"
-            className="mt-5 inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-accent-2 px-5 text-body font-medium text-[#0a0f1e]"
+            className="mt-6 inline-flex min-h-[48px] items-center gap-2 rounded-ctl bg-accent px-5 text-body font-medium text-white transition-colors hover:bg-accent-strong"
           >
             <Plus className="h-5 w-5" /> New pin
           </Link>

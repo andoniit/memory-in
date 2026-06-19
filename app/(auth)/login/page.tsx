@@ -1,9 +1,11 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { btnPrimary, btnSecondary, field } from "@/lib/ui";
 
 function LoginForm() {
   const params = useSearchParams();
@@ -46,36 +48,47 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center px-page">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-6">
-        <h1 className="text-heading">Sign in to MemoryPin</h1>
-        <p className="mt-1 text-caption text-text-muted">
-          Your travels, alive on your wall.
+    <main className="flex min-h-dvh flex-col px-page">
+      <header className="flex items-center gap-2 py-5">
+        <span className="h-2.5 w-2.5 rounded-full bg-accent" />
+        <Link
+          href="/"
+          className="font-mono text-micro uppercase tracking-[0.2em]"
+        >
+          MemoryPin
+        </Link>
+      </header>
+
+      <div className="flex flex-1 flex-col justify-center pb-16">
+        <span className="index-num">02 — ACCESS</span>
+        <h1 className="mt-3 text-display">Sign in</h1>
+        <p className="mt-2 max-w-xs text-body text-muted">
+          We&apos;ll email you a secure magic link — no password.
         </p>
 
         {status === "sent" ? (
-          <div className="mt-6 rounded-xl border border-border bg-surface-2 p-4 text-center">
-            <Mail className="mx-auto mb-2 h-6 w-6 text-accent" />
-            <p className="text-body">Check your inbox</p>
-            <p className="mt-1 text-caption text-text-muted">
-              We sent a magic link to {email}.
+          <div className="mt-8 rounded-card border border-border bg-surface p-5">
+            <p className="label">Check your inbox</p>
+            <p className="mt-2 text-body">
+              A magic link is on its way to{" "}
+              <span className="font-medium">{email}</span>.
             </p>
           </div>
         ) : (
           <>
-            <form onSubmit={sendMagicLink} className="mt-6 space-y-3">
+            <form onSubmit={sendMagicLink} className="mt-8 space-y-3">
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="min-h-[44px] w-full rounded-xl border border-border bg-surface-2 px-4 text-body text-text-primary outline-none placeholder:text-text-muted focus:border-accent"
+                className={field}
               />
               <button
                 type="submit"
                 disabled={status === "sending"}
-                className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 text-body font-medium text-[#0a0f1e] disabled:opacity-60"
+                className={`${btnPrimary} w-full`}
               >
                 {status === "sending" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -85,22 +98,20 @@ function LoginForm() {
               </button>
             </form>
 
-            <div className="my-4 flex items-center gap-3 text-micro text-text-muted">
+            <div className="my-5 flex items-center gap-3">
               <span className="h-px flex-1 bg-border" />
-              or
+              <span className="label">or</span>
               <span className="h-px flex-1 bg-border" />
             </div>
 
             <button
               onClick={signInWithGoogle}
-              className="min-h-[44px] w-full rounded-xl border border-border bg-surface-2 px-4 text-body font-medium text-text-primary"
+              className={`${btnSecondary} w-full`}
             >
               Continue with Google
             </button>
 
-            {error && (
-              <p className="mt-3 text-caption text-accent-2">{error}</p>
-            )}
+            {error && <p className="mt-4 text-caption text-accent">{error}</p>}
           </>
         )}
       </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { btnPrimary } from "@/lib/ui";
 
 export function InviteLink({ url }: { url: string }) {
   const [copied, setCopied] = useState(false);
@@ -21,7 +22,7 @@ export function InviteLink({ url }: { url: string }) {
       try {
         await navigator.share({
           title: "Join me on MemoryPin",
-          text: "Let's share our travel memories 💕",
+          text: "Let's map our travel memories.",
           url,
         });
         return;
@@ -34,14 +35,14 @@ export function InviteLink({ url }: { url: string }) {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2 rounded-xl border border-border bg-surface-2 p-2">
-        <code className="flex-1 truncate px-1 text-caption text-text-primary">
+      <div className="flex items-center gap-2 rounded-ctl border border-border bg-surface-2 p-1.5">
+        <code className="flex-1 truncate px-2 font-mono text-caption text-ink">
           {url}
         </code>
         <button
           onClick={copy}
-          aria-label="Copy invite link"
-          className="flex h-9 w-9 min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-muted hover:text-text-primary"
+          aria-label="Copy link"
+          className="flex h-9 w-9 items-center justify-center rounded-md text-muted hover:bg-surface hover:text-ink"
         >
           {copied ? (
             <Check className="h-4 w-4 text-accent" />
@@ -50,10 +51,7 @@ export function InviteLink({ url }: { url: string }) {
           )}
         </button>
       </div>
-      <button
-        onClick={share}
-        className="min-h-[44px] w-full rounded-xl bg-accent px-4 text-body font-medium text-[#0a0f1e]"
-      >
+      <button onClick={share} className={`${btnPrimary} w-full`}>
         Share invite
       </button>
     </div>

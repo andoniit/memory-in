@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, ImagePlus, Loader2 } from "lucide-react";
+import { iconBtnGhost } from "@/lib/ui";
 
 type Tab = "photo" | "video" | "note";
 
@@ -41,7 +42,8 @@ export function UploadForm({
 
   async function getSignedParams(): Promise<SignedParams> {
     const res = await fetch("/api/upload-url");
-    if (!res.ok) throw new Error((await res.json()).error ?? "Upload setup failed");
+    if (!res.ok)
+      throw new Error((await res.json()).error ?? "Upload setup failed");
     return res.json();
   }
 
@@ -61,7 +63,8 @@ export function UploadForm({
       const xhr = new XMLHttpRequest();
       xhr.open("POST", params.upload_url);
       xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+        if (e.lengthComputable)
+          onProgress(Math.round((e.loaded / e.total) * 100));
       };
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
@@ -81,7 +84,8 @@ export function UploadForm({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error((await res.json()).error ?? "Could not save memory");
+    if (!res.ok)
+      throw new Error((await res.json()).error ?? "Could not save memory");
   }
 
   async function handleSubmit() {
@@ -97,7 +101,6 @@ export function UploadForm({
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
           const result = await uploadToCloudinary(file, params, (pct) => {
-            // Blend per-file progress into an overall bar.
             setProgress(Math.round(((i + pct / 100) / files.length) * 100));
           });
           const type = result.resource_type === "video" ? "video" : "photo";
@@ -126,20 +129,19 @@ export function UploadForm({
   const accept = tab === "video" ? "video/*" : "image/*";
 
   return (
-    <main className="mx-auto max-w-md px-page py-4">
-      <header className="mb-5 flex items-center gap-2">
-        <Link
-          href={`/p/${pinId}`}
-          aria-label="Back"
-          className="flex h-11 w-11 items-center justify-center rounded-full -ml-2"
-        >
-          <ChevronLeft className="h-6 w-6" />
+    <main className="mx-auto max-w-md px-page py-5">
+      <header className="mb-6 flex items-center gap-1">
+        <Link href={`/p/${pinId}`} aria-label="Back" className={iconBtnGhost}>
+          <ChevronLeft className="h-6 w-6" strokeWidth={1.75} />
         </Link>
-        <h1 className="text-heading">Add to {pinTitle}</h1>
+        <div>
+          <span className="index-num">ADD</span>
+          <h1 className="text-heading">{pinTitle}</h1>
+        </div>
       </header>
 
       {/* Tabs */}
-      <div className="mb-4 grid grid-cols-3 gap-1 rounded-xl border border-border bg-surface p-1">
+      <div className="mb-5 grid grid-cols-3 gap-1 rounded-ctl border border-border bg-surface p-1">
         {(["photo", "video", "note"] as Tab[]).map((t) => (
           <button
             key={t}
@@ -147,8 +149,8 @@ export function UploadForm({
               setTab(t);
               setFiles([]);
             }}
-            className={`min-h-[44px] rounded-lg text-caption capitalize ${
-              tab === t ? "bg-accent text-[#0a0f1e]" : "text-text-muted"
+            className={`min-h-[40px] rounded-md font-mono text-micro uppercase tracking-[0.1em] transition-colors ${
+              tab === t ? "bg-accent text-white" : "text-muted hover:text-ink"
             }`}
           >
             {t}
@@ -169,9 +171,9 @@ export function UploadForm({
           />
           <button
             onClick={() => fileRef.current?.click()}
-            className="flex min-h-[160px] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-surface text-text-muted"
+            className="flex min-h-[160px] w-full flex-col items-center justify-center gap-2 rounded-card border border-dashed border-border bg-surface text-muted transition-colors hover:border-ink/30"
           >
-            <ImagePlus className="h-8 w-8" />
+            <ImagePlus className="h-8 w-8" strokeWidth={1.5} />
             <span className="text-caption">
               {files.length > 0
                 ? `${files.length} file${files.length > 1 ? "s" : ""} selected`
@@ -186,11 +188,11 @@ export function UploadForm({
         onChange={(e) => setCaption(e.target.value)}
         placeholder={tab === "note" ? "Write a memory…" : "Caption (optional)"}
         rows={tab === "note" ? 5 : 2}
-        className="mt-4 w-full rounded-xl border border-border bg-surface-2 p-3 text-body outline-none focus:border-accent"
+        className="mt-4 w-full rounded-ctl border border-border bg-surface p-3 text-body text-ink outline-none transition-colors placeholder:text-muted/60 focus:border-accent"
       />
 
       {busy && progress > 0 && (
-        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-surface-2">
+        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-surface-2">
           <div
             className="h-full bg-accent transition-all"
             style={{ width: `${progress}%` }}
@@ -198,12 +200,12 @@ export function UploadForm({
         </div>
       )}
 
-      {error && <p className="mt-3 text-caption text-accent-2">{error}</p>}
+      {error && <p className="mt-4 text-caption text-accent">{error}</p>}
 
       <button
         onClick={handleSubmit}
         disabled={busy}
-        className="mt-5 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-accent-2 text-body font-medium text-[#0a0f1e] disabled:opacity-60"
+        className="mt-6 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-ctl bg-accent text-body font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50"
       >
         {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Upload memory"}
       </button>

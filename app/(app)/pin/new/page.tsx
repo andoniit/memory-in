@@ -1,15 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Loader2 } from "lucide-react";
+import { ChevronLeft, Loader2, MapPin, Check } from "lucide-react";
 import { InviteLink } from "@/components/InviteLink";
+import { btnPrimary, btnSecondary, field, iconBtnGhost } from "@/lib/ui";
+import type { GeocodeResult } from "@/app/api/geocode/route";
 
-const EMOJI = ["📍", "💕", "🏖️", "🗼", "⛰️", "🌴", "🏙️", "🌅", "🍷", "✈️"];
+const EMOJI = ["📍", "🏖️", "🗼", "⛰️", "🌴", "🏙️", "🌅", "🍷", "✈️", "🏛️"];
 
 export default function NewPinPage() {
   const [title, setTitle] = useState("");
-  const [city, setCity] = useState("");
+  const [query, setQuery] = useState("");
+  const [place, setPlace] = useState<GeocodeResult | null>(null);
+  const [results, setResults] = useState<GeocodeResult[]>([]);
+  const [searching, setSearching] = useState(false);
   const [emoji, setEmoji] = useState("📍");
   const [visitDate, setVisitDate] = useState("");
   const [isPublic, setIsPublic] = useState(true);
@@ -18,6 +23,36 @@ export default function NewPinPage() {
   const [created, setCreated] = useState<{ id: string; url: string } | null>(
     null,
   );
+
+  // Debounced geocoding.
+  const debounce = useRef<ReturnType<typeof setTimeout>>();
+  useEffect(() => {
+    if (place && query === place.name.split(",")[0]) return;
+    clearTimeout(debounce.current);
+    if (query.trim().length < 2) {
+      setResults([]);
+      return;
+    }
+    debounce.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        setResults(data.results ?? []);
+      } catch {
+        setResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 450);
+    return () => clearTimeout(debounce.current);
+  }, [query, place]);
+
+  function selectPlace(r: GeocodeResult) {
+    setPlace(r);
+    setQuery(r.name.split(",")[0]);
+    setResults([]);
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -29,7 +64,9 @@ export default function NewPinPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
-          city,
+          city: place?.name.split(",").slice(0, 2).join(",").trim() ?? query,
+          lat: place?.lat,
+          lng: place?.lng,
           emoji,
           visit_date: visitDate || undefined,
           is_public: isPublic,
@@ -47,36 +84,40 @@ export default function NewPinPage() {
 
   if (created) {
     return (
-      <main className="mx-auto max-w-md px-page py-6">
-        <h1 className="text-heading">Program your sticker 🏷️</h1>
-        <p className="mt-2 text-caption text-text-muted">
-          Write this URL to your NFC sticker using the free{" "}
-          <span className="font-medium text-text-primary">NFC Tools</span> app
-          (Write → URL/URI), then stick it on your map.
+      <main className="mx-auto max-w-md px-page py-5">
+        <span className="index-num">05 — PROGRAM TAG</span>
+        <h1 className="mt-2 text-display">Pin created</h1>
+        <p className="mt-3 text-body text-muted">
+          Write this URL to your NFC sticker with the free{" "}
+          <span className="text-ink">NFC Tools</span> app (Write → URL/URI),
+          then stick it on your map.
         </p>
 
-        <div className="mt-4">
+        <div className="mt-5">
           <InviteLink url={created.url} />
         </div>
 
-        <ol className="mt-6 space-y-2 text-caption text-text-muted">
-          <li>1. Open NFC Tools → Write → Add a record → URL/URI</li>
-          <li>2. Paste the URL above</li>
-          <li>3. Tap Write, then hold your phone to the sticker</li>
-          <li>4. Stick it on a matte (non-glass) map and tap to test</li>
+        <ol className="mt-7 space-y-3 border-t border-border pt-5">
+          {[
+            "Open NFC Tools → Write → Add a record → URL/URI",
+            "Paste the URL above",
+            "Tap Write, then hold your phone to the sticker",
+            "Stick it on a matte (non-glass) map and tap to test",
+          ].map((step, i) => (
+            <li key={i} className="flex gap-4">
+              <span className="index-num pt-0.5">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="text-body text-muted">{step}</span>
+            </li>
+          ))}
         </ol>
 
         <div className="mt-8 flex gap-3">
-          <Link
-            href={`/p/${created.id}/upload`}
-            className="flex min-h-[48px] flex-1 items-center justify-center rounded-xl bg-accent-2 text-body font-medium text-[#0a0f1e]"
-          >
+          <Link href={`/p/${created.id}/upload`} className={`${btnPrimary} flex-1`}>
             Add photos
           </Link>
-          <Link
-            href="/dashboard"
-            className="flex min-h-[48px] flex-1 items-center justify-center rounded-xl border border-border text-body"
-          >
+          <Link href="/dashboard" className={`${btnSecondary} flex-1`}>
             Done
           </Link>
         </div>
@@ -85,70 +126,96 @@ export default function NewPinPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md px-page py-4">
-      <header className="mb-5 flex items-center gap-2">
-        <Link
-          href="/dashboard"
-          aria-label="Back"
-          className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full"
-        >
-          <ChevronLeft className="h-6 w-6" />
+    <main className="mx-auto max-w-md px-page py-5">
+      <header className="mb-7 flex items-center gap-1">
+        <Link href="/dashboard" aria-label="Back" className={iconBtnGhost}>
+          <ChevronLeft className="h-6 w-6" strokeWidth={1.75} />
         </Link>
-        <h1 className="text-heading">New memory pin</h1>
+        <div>
+          <span className="index-num">NEW</span>
+          <h1 className="text-heading">Memory pin</h1>
+        </div>
       </header>
 
-      <form onSubmit={handleCreate} className="space-y-4">
+      <form onSubmit={handleCreate} className="space-y-6">
         <div>
-          <label className="mb-1 block text-caption text-text-muted">
-            Title
-          </label>
+          <label className="label mb-2 block">Title</label>
           <input
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Our Paris trip"
-            className="min-h-[44px] w-full rounded-xl border border-border bg-surface-2 px-4 text-body outline-none focus:border-accent"
+            className={field}
           />
         </div>
 
+        {/* City search */}
         <div>
-          <label className="mb-1 block text-caption text-text-muted">
-            City
-          </label>
-          <input
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            placeholder="Paris, France"
-            className="min-h-[44px] w-full rounded-xl border border-border bg-surface-2 px-4 text-body outline-none focus:border-accent"
-          />
+          <label className="label mb-2 block">Location</label>
+          <div className="relative">
+            <input
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPlace(null);
+              }}
+              placeholder="Search a city…"
+              className={field}
+            />
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted">
+              {searching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : place ? (
+                <Check className="h-4 w-4 text-accent" />
+              ) : (
+                <MapPin className="h-4 w-4" />
+              )}
+            </span>
+          </div>
+          {results.length > 0 && (
+            <ul className="mt-2 overflow-hidden rounded-ctl border border-border bg-surface">
+              {results.map((r, i) => (
+                <li key={i}>
+                  <button
+                    type="button"
+                    onClick={() => selectPlace(r)}
+                    className="block w-full border-b border-border px-4 py-3 text-left text-caption text-muted last:border-0 hover:bg-surface-2 hover:text-ink"
+                  >
+                    {r.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {place && (
+            <p className="mt-2 font-mono text-micro tabular-nums text-muted">
+              {place.lat.toFixed(3)}, {place.lng.toFixed(3)}
+            </p>
+          )}
         </div>
 
         <div>
-          <label className="mb-1 block text-caption text-text-muted">
-            Visit date
-          </label>
+          <label className="label mb-2 block">Visit date</label>
           <input
             type="date"
             value={visitDate}
             onChange={(e) => setVisitDate(e.target.value)}
-            className="min-h-[44px] w-full rounded-xl border border-border bg-surface-2 px-4 text-body outline-none focus:border-accent"
+            className={field}
           />
         </div>
 
         <div>
-          <label className="mb-1 block text-caption text-text-muted">
-            Emoji
-          </label>
+          <label className="label mb-2 block">Marker</label>
           <div className="flex flex-wrap gap-2">
             {EMOJI.map((e) => (
               <button
                 key={e}
                 type="button"
                 onClick={() => setEmoji(e)}
-                className={`flex h-11 w-11 items-center justify-center rounded-xl border text-xl ${
+                className={`flex h-11 w-11 items-center justify-center rounded-ctl border text-xl transition-colors ${
                   emoji === e
                     ? "border-accent bg-surface-2"
-                    : "border-border bg-surface"
+                    : "border-border bg-surface hover:border-ink/25"
                 }`}
               >
                 {e}
@@ -157,22 +224,19 @@ export default function NewPinPage() {
           </div>
         </div>
 
-        <label className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3">
-          <span className="text-body">Public (NFC tap works without login)</span>
+        <label className="flex items-center justify-between rounded-ctl border border-border bg-surface px-4 py-3">
+          <span className="text-body">Public — NFC tap works without login</span>
           <input
             type="checkbox"
             checked={isPublic}
             onChange={(e) => setIsPublic(e.target.checked)}
-            className="h-5 w-5 accent-[#6c8eff]"
+            className="h-5 w-5 accent-[#f25623]"
           />
         </label>
 
-        {error && <p className="text-caption text-accent-2">{error}</p>}
+        {error && <p className="text-caption text-accent">{error}</p>}
 
-        <button
-          disabled={busy}
-          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-accent text-body font-medium text-[#0a0f1e] disabled:opacity-60"
-        >
+        <button disabled={busy} className={`${btnPrimary} w-full`}>
           {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Create pin"}
         </button>
       </form>

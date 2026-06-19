@@ -22,7 +22,7 @@ export function PhotoGrid({ memories }: { memories: Memory[] }) {
           {notes.map((n) => (
             <p
               key={n.id}
-              className="rounded-xl border border-border bg-surface p-3 text-body text-text-primary"
+              className="rounded-card border border-border bg-surface p-4 text-body text-ink"
             >
               {n.caption}
             </p>

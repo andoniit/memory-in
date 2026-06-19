@@ -12,9 +12,9 @@ export function PinCard({ pin }: { pin: PinWithMemories }) {
   return (
     <Link
       href={`/p/${pin.id}`}
-      className="block overflow-hidden rounded-2xl border border-border bg-surface"
+      className="group block overflow-hidden rounded-card border border-border bg-surface transition-colors hover:border-ink/25"
     >
-      <div className="aspect-[4/3] w-full bg-surface-2">
+      <div className="relative aspect-[4/3] w-full bg-surface-2">
         {pin.cover?.thumb_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -24,20 +24,19 @@ export function PinCard({ pin }: { pin: PinWithMemories }) {
             loading="lazy"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-4xl">
+          <div className="flex h-full w-full items-center justify-center text-3xl text-muted/40">
             {pin.emoji}
           </div>
         )}
+        <span className="absolute left-2 top-2 rounded-full bg-surface/90 px-2 py-0.5 font-mono text-micro tabular-nums text-muted backdrop-blur">
+          {String(pin.memory_count).padStart(2, "0")}
+        </span>
       </div>
       <div className="p-3">
         <p className="truncate text-body font-medium">
-          {pin.emoji} {pin.city ?? pin.title}
+          {pin.city ?? pin.title}
         </p>
-        <p className="mt-0.5 text-micro text-text-muted">
-          {[dateLabel, `${pin.memory_count} memories`]
-            .filter(Boolean)
-            .join(" · ")}
-        </p>
+        <p className="label mt-1">{dateLabel ?? "Undated"}</p>
       </div>
     </Link>
   );
