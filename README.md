@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MemoryPin
 
-## Getting Started
+An NFC memory-map PWA — couples pin photos/videos to real-world locations and
+tap a physical NFC sticker to relive them. Built with Next.js 14 (App Router),
+Supabase, Cloudinary, and Tailwind.
 
-First, run the development server:
+> **Phase 1 (MVP)** is implemented: auth, couples, pin creation, the fast public
+> `/p/[id]` NFC landing page, media upload, and a dashboard pin list. The 3D
+> globe (Phase 2), AI stories + lightbox/video (Phase 3), and launch polish
+> (Phase 4) are not built yet.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Setup
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. **Install** (already done if scaffolded): `npm install`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. **Environment** — copy `.env.example` to `.env.local` and fill in:
+   - Supabase: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+     `SUPABASE_SERVICE_ROLE_KEY`
+   - Cloudinary: `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`,
+     `CLOUDINARY_API_SECRET`
+   - `NEXT_PUBLIC_APP_URL` (e.g. `http://localhost:3000`)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. **Database** — run `supabase/migrations/001_initial.sql` in the Supabase SQL
+   editor (or `supabase db push`). This creates the schema, RLS policies, and the
+   `increment_pin_view` / `user_in_couple` functions.
 
-## Learn More
+4. **Auth providers** — in the Supabase dashboard enable Email (magic link) and,
+   optionally, Google OAuth. Add `http://localhost:3000/auth/callback` (and your
+   prod URL) to the allowed redirect URLs.
 
-To learn more about Next.js, take a look at the following resources:
+5. **Cloudinary** — uploads are signed server-side via `/api/upload-url`; no
+   unsigned preset is required. Mobile uploads use `resource_type: auto` so one
+   path handles both photos and videos.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+6. **Run**: `npm run dev`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## The core loop
 
-## Deploy on Vercel
+1. Sign in (`/login`) → create a couple in `/settings` → share the invite link.
+2. Create a pin (`/pin/new`) → copy the `…/p/<id>` URL onto an NTAG213 sticker
+   with the **NFC Tools** app.
+3. Add photos/videos (`/p/<id>/upload`).
+4. Tap the sticker → the public `/p/<id>` page opens fast, no login needed.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Notes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Uses `@supabase/ssr` (the spec's `@supabase/auth-helpers-nextjs` is deprecated).
+- `types/index.ts` hand-writes the `Database` type. Row types **must** stay as
+  `type` aliases, not `interface` — interfaces don't satisfy supabase-js's
+  `Record<string, unknown>` constraint and silently degrade queries to `never`.
+- `lat`/`lng` are optional in Phase 1 (geocoding arrives with the globe in
+  Phase 2).

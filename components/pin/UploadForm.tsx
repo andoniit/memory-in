@@ -1,0 +1,212 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { ChevronLeft, ImagePlus, Loader2 } from "lucide-react";
+
+type Tab = "photo" | "video" | "note";
+
+interface SignedParams {
+  upload_url: string;
+  api_key: string;
+  timestamp: number;
+  signature: string;
+  folder: string;
+}
+
+interface CloudinaryResult {
+  public_id: string;
+  resource_type: "image" | "video" | string;
+  width?: number;
+  height?: number;
+  duration?: number;
+}
+
+export function UploadForm({
+  pinId,
+  pinTitle,
+}: {
+  pinId: string;
+  pinTitle: string;
+}) {
+  const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [tab, setTab] = useState<Tab>("photo");
+  const [files, setFiles] = useState<File[]>([]);
+  const [caption, setCaption] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function getSignedParams(): Promise<SignedParams> {
+    const res = await fetch("/api/upload-url");
+    if (!res.ok) throw new Error((await res.json()).error ?? "Upload setup failed");
+    return res.json();
+  }
+
+  function uploadToCloudinary(
+    file: File,
+    params: SignedParams,
+    onProgress: (pct: number) => void,
+  ): Promise<CloudinaryResult> {
+    return new Promise((resolve, reject) => {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("api_key", params.api_key);
+      form.append("timestamp", String(params.timestamp));
+      form.append("signature", params.signature);
+      form.append("folder", params.folder);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", params.upload_url);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText));
+        } else {
+          reject(new Error("Cloudinary upload failed"));
+        }
+      };
+      xhr.onerror = () => reject(new Error("Network error during upload"));
+      xhr.send(form);
+    });
+  }
+
+  async function saveMemory(body: Record<string, unknown>) {
+    const res = await fetch("/api/memories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error((await res.json()).error ?? "Could not save memory");
+  }
+
+  async function handleSubmit() {
+    setError(null);
+    setBusy(true);
+    try {
+      if (tab === "note") {
+        if (!caption.trim()) throw new Error("Write something first.");
+        await saveMemory({ pin_id: pinId, type: "note", caption: caption.trim() });
+      } else {
+        if (files.length === 0) throw new Error("Choose a file first.");
+        const params = await getSignedParams();
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const result = await uploadToCloudinary(file, params, (pct) => {
+            // Blend per-file progress into an overall bar.
+            setProgress(Math.round(((i + pct / 100) / files.length) * 100));
+          });
+          const type = result.resource_type === "video" ? "video" : "photo";
+          await saveMemory({
+            pin_id: pinId,
+            type,
+            cloudinary_id: result.public_id,
+            caption: caption.trim() || undefined,
+            width: result.width,
+            height: result.height,
+            duration_secs: result.duration
+              ? Math.round(result.duration)
+              : undefined,
+          });
+        }
+      }
+      router.push(`/p/${pinId}`);
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+      setBusy(false);
+      setProgress(0);
+    }
+  }
+
+  const accept = tab === "video" ? "video/*" : "image/*";
+
+  return (
+    <main className="mx-auto max-w-md px-page py-4">
+      <header className="mb-5 flex items-center gap-2">
+        <Link
+          href={`/p/${pinId}`}
+          aria-label="Back"
+          className="flex h-11 w-11 items-center justify-center rounded-full -ml-2"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </Link>
+        <h1 className="text-heading">Add to {pinTitle}</h1>
+      </header>
+
+      {/* Tabs */}
+      <div className="mb-4 grid grid-cols-3 gap-1 rounded-xl border border-border bg-surface p-1">
+        {(["photo", "video", "note"] as Tab[]).map((t) => (
+          <button
+            key={t}
+            onClick={() => {
+              setTab(t);
+              setFiles([]);
+            }}
+            className={`min-h-[44px] rounded-lg text-caption capitalize ${
+              tab === t ? "bg-accent text-[#0a0f1e]" : "text-text-muted"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {tab !== "note" && (
+        <>
+          <input
+            ref={fileRef}
+            type="file"
+            accept={accept}
+            capture="environment"
+            multiple
+            hidden
+            onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+          />
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="flex min-h-[160px] w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-surface text-text-muted"
+          >
+            <ImagePlus className="h-8 w-8" />
+            <span className="text-caption">
+              {files.length > 0
+                ? `${files.length} file${files.length > 1 ? "s" : ""} selected`
+                : `Tap to choose ${tab}`}
+            </span>
+          </button>
+        </>
+      )}
+
+      <textarea
+        value={caption}
+        onChange={(e) => setCaption(e.target.value)}
+        placeholder={tab === "note" ? "Write a memory…" : "Caption (optional)"}
+        rows={tab === "note" ? 5 : 2}
+        className="mt-4 w-full rounded-xl border border-border bg-surface-2 p-3 text-body outline-none focus:border-accent"
+      />
+
+      {busy && progress > 0 && (
+        <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-surface-2">
+          <div
+            className="h-full bg-accent transition-all"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      )}
+
+      {error && <p className="mt-3 text-caption text-accent-2">{error}</p>}
+
+      <button
+        onClick={handleSubmit}
+        disabled={busy}
+        className="mt-5 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-accent-2 text-body font-medium text-[#0a0f1e] disabled:opacity-60"
+      >
+        {busy ? <Loader2 className="h-5 w-5 animate-spin" /> : "Upload memory"}
+      </button>
+    </main>
+  );
+}
