@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { OrbitMark } from "@/components/OrbitMark";
-import { btnPrimary } from "@/lib/ui";
+import { LandingGlobe } from "@/components/LandingGlobe";
 
 const steps = [
   { n: "01", title: "Pin", text: "Place an NFC tag on your wall map." },
@@ -11,39 +10,52 @@ const steps = [
 export default function LandingPage() {
   return (
     <main className="min-h-dvh">
-      {/* Top bar */}
-      <header className="flex items-center justify-between px-page py-5">
-        <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-accent" />
-          <span className="font-mono text-micro uppercase tracking-[0.2em]">
-            MemoryPin
+      {/* Dark hero with the live globe */}
+      <section
+        className="relative flex h-[90vh] flex-col overflow-hidden text-white"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 40%, #0a0e15 0%, #05070a 60%, #000000 100%)",
+        }}
+      >
+        <header className="relative z-10 flex items-center justify-between px-page py-5">
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-accent" />
+            <span className="font-mono text-micro uppercase tracking-[0.2em]">
+              MemoryPin
+            </span>
+          </div>
+          <Link
+            href="/login"
+            className="font-mono text-micro uppercase tracking-[0.14em] text-white/60 hover:text-white"
+          >
+            Sign in
+          </Link>
+        </header>
+
+        {/* Globe fills the hero (draggable in the open area) */}
+        <div className="absolute inset-0 top-10">
+          <LandingGlobe />
+        </div>
+
+        {/* Bottom scrim + copy */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black via-black/70 to-transparent px-page pb-9 pt-24">
+          <span className="font-mono text-micro uppercase tracking-[0.14em] text-accent">
+            01 — MEMORY MAP
           </span>
-        </div>
-        <Link href="/login" className="label hover:text-ink">
-          Sign in
-        </Link>
-      </header>
-
-      {/* Hero */}
-      <section className="relative px-page pt-6">
-        <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto flex justify-center opacity-90">
-          <OrbitMark className="w-[min(92vw,460px)]" />
-        </div>
-
-        <div className="relative flex min-h-[62vh] flex-col justify-end pb-10">
-          <span className="index-num">01 — MEMORY MAP</span>
           <h1 className="mt-3 max-w-[14ch] text-display text-balance">
             Memories, mapped to the places you&apos;ve been.
           </h1>
-          <p className="mt-4 max-w-sm text-body text-muted">
-            Pin photos and videos to real locations. Tap a physical NFC sticker
-            to open the trip — no app, no login.
+          <p className="mt-3 max-w-sm text-body text-white/70">
+            Pin photos and videos to real locations. Tap an NFC sticker to open
+            the trip.
           </p>
-          <div className="mt-7">
-            <Link href="/login" className={btnPrimary}>
-              Get started
-            </Link>
-          </div>
+          <Link
+            href="/login"
+            className="pointer-events-auto mt-6 inline-flex min-h-[48px] items-center justify-center rounded-ctl bg-accent px-7 text-body font-medium text-white transition-colors hover:bg-accent-strong"
+          >
+            Get started
+          </Link>
         </div>
       </section>
 

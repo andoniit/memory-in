@@ -1,10 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Plus } from "lucide-react";
+import { ChevronLeft, Plus, SlidersHorizontal } from "lucide-react";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getCouple } from "@/lib/auth";
 import { heroUrl } from "@/lib/cloudinary";
 import { PhotoGrid } from "@/components/pin/PhotoGrid";
+import { StorySection } from "@/components/pin/StorySection";
 import { iconBtnGhost } from "@/lib/ui";
 import type { Memory } from "@/types/index";
 
@@ -75,6 +76,15 @@ export default async function PinPage({
         <span className="truncate font-mono text-micro uppercase tracking-[0.14em] text-muted">
           {pin.city ?? pin.title}
         </span>
+        {isMember && (
+          <Link
+            href={`/pin/${id}`}
+            aria-label="Manage pin"
+            className={`${iconBtnGhost} ml-auto`}
+          >
+            <SlidersHorizontal className="h-5 w-5" strokeWidth={1.75} />
+          </Link>
+        )}
       </div>
 
       {/* Hero */}
@@ -113,12 +123,11 @@ export default async function PinPage({
       </div>
 
       {/* AI story */}
-      {pin.story && (
-        <section className="border-b border-border px-page py-6">
-          <p className="label mb-3">Story</p>
-          <p className="text-body leading-relaxed">{pin.story}</p>
-        </section>
-      )}
+      <StorySection
+        pinId={id}
+        initialStory={pin.story}
+        canGenerate={isMember}
+      />
 
       {/* Memories */}
       <section className="py-5">
