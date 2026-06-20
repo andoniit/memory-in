@@ -5,9 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 
 const MESSAGES: Record<string, string> = {
   invalid_code: "This invite link isn't valid.",
-  circle_full: "This circle is already full (4 members max).",
+  circle_full: "This Orbit is already full (4 members max).",
   has_memories:
-    "You already have your own memories. Ask them to join your circle instead.",
+    "You already have your own memories. Ask them to join your Orbit instead.",
 };
 
 /**

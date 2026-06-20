@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
         redirect && redirect.startsWith("/")
           ? redirect
           : user
-            ? await postLoginPath()
+            ? await postLoginPath(user.id)
             : "/dashboard";
       return NextResponse.redirect(`${origin}${dest}`);
     }

@@ -17,6 +17,14 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // Send new users through onboarding first.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (!profile?.display_name) redirect("/onboarding");
+
   // Solo works out of the box — no setup required.
   const circle = await getCircle(user.id);
   if (!circle) redirect("/login");

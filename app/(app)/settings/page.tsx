@@ -55,10 +55,10 @@ export default async function SettingsPage() {
         </form>
       </section>
 
-      {/* Circle */}
+      {/* Orbit */}
       <section className="mb-10">
         <div className="mb-3 flex items-center justify-between">
-          <p className="label">Your circle</p>
+          <p className="label">Your Orbit</p>
           <span className="font-mono text-micro tabular-nums text-muted">
             {members.length} / {MAX_CIRCLE_MEMBERS}
           </span>
@@ -98,7 +98,7 @@ export default async function SettingsPage() {
             </div>
           ) : (
             <p className="mt-4 text-caption text-muted">
-              Your circle is full.
+              Your Orbit is full.
             </p>
           )}
         </div>
@@ -106,17 +106,17 @@ export default async function SettingsPage() {
         {members.length === 1 && (
           <p className="mt-3 text-caption text-muted">
             You&apos;re flying solo — that&apos;s perfectly fine. Invite people
-            anytime to share a map.
+            to your Orbit anytime.
           </p>
         )}
       </section>
 
       {members.length === 1 && (
         <section className="mb-10">
-          <p className="label mb-3">Join a friend&apos;s circle</p>
+          <p className="label mb-3">Join a friend&apos;s Orbit</p>
           <div className="rounded-card border border-border bg-surface p-5">
             <p className="mb-3 text-caption text-muted">
-              Got a code from a friend? Enter it to share their memories.
+              Got a code from a friend? Enter it to join their Orbit.
             </p>
             <JoinCodeForm />
           </div>

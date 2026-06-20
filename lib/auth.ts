@@ -59,7 +59,16 @@ export async function getCircleMembers(
   }));
 }
 
-/** Where to send a user right after login. Solo works, so always the dashboard. */
-export async function postLoginPath() {
-  return "/dashboard";
+/**
+ * Where to send a user right after login. New users (no display name yet) go
+ * through onboarding; returning users go straight to the dashboard.
+ */
+export async function postLoginPath(userId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", userId)
+    .maybeSingle();
+  return data?.display_name ? "/dashboard" : "/onboarding";
 }

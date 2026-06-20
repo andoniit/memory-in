@@ -57,11 +57,11 @@ export default async function InvitePage({
         <div>
           <span className="index-num">INVITE</span>
           <h1 className="mt-3 max-w-[16ch] text-display text-balance">
-            {inviterName} invited you to their MemoryPin circle
+            {inviterName} invited you to their Orbit
           </h1>
           <p className="mt-3 max-w-sm text-body text-muted">
-            Join to share travel memories together — up to{" "}
-            {MAX_CIRCLE_MEMBERS} people per circle.
+            Join to share memories together — up to {MAX_CIRCLE_MEMBERS} people
+            per Orbit.
           </p>
           <p className="mt-2 font-mono text-micro tabular-nums text-muted">
             {memberCount} / {MAX_CIRCLE_MEMBERS} members
@@ -69,7 +69,7 @@ export default async function InvitePage({
 
           {full ? (
             <p className="mt-7 text-body text-accent">
-              This circle is already full.
+              This Orbit is already full.
             </p>
           ) : user ? (
             <AcceptInviteForm code={code} />

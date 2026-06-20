@@ -23,9 +23,9 @@ export async function updateProfile(formData: FormData) {
 
 const JOIN_MESSAGES: Record<string, string> = {
   invalid_code: "That code isn't valid.",
-  circle_full: "That circle is already full (4 members max).",
+  circle_full: "That Orbit is already full (4 members max).",
   has_memories:
-    "You already have your own memories. Ask your friend to join your circle instead.",
+    "You already have your own memories. Ask your friend to join your Orbit instead.",
 };
 
 /**
