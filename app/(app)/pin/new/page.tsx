@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, Loader2, MapPin, Check } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { InviteLink } from "@/components/InviteLink";
+import { NfcWriter } from "@/components/pin/NfcWriter";
 import { btnPrimary, btnSecondary, field, iconBtnGhost } from "@/lib/ui";
 import type { GeocodeResult } from "@/app/api/geocode/route";
 
@@ -89,10 +90,14 @@ export default function NewPinPage() {
         <span className="index-num">05 — PROGRAM TAG</span>
         <h1 className="mt-2 text-display">Pin created</h1>
         <p className="mt-3 text-body text-muted">
-          Write this URL to your NFC sticker with the free{" "}
-          <span className="text-ink">NFC Tools</span> app (Write → URL/URI),
-          then stick it on the object.
+          Hold a blank NFC sticker to your phone and tap{" "}
+          <span className="text-ink">Write to sticker</span> — that&apos;s it.
         </p>
+
+        {/* In-app NFC writer (Chrome/Android); falls back to QR + NFC Tools */}
+        <div className="mt-6">
+          <NfcWriter url={created.url} />
+        </div>
 
         <div className="mt-6 flex justify-center">
           <div className="rounded-card border border-border bg-white p-4">
@@ -108,6 +113,10 @@ export default function NewPinPage() {
         </div>
 
         <ol className="mt-7 space-y-3 border-t border-border pt-5">
+          <li className="text-caption text-muted">
+            No tap-to-write? Use the free{" "}
+            <span className="text-ink">NFC Tools</span> app instead:
+          </li>
           {[
             "Open NFC Tools → Write → Add a record → URL/URI",
             "Paste the URL above",

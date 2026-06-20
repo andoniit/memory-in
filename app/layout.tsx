@@ -15,9 +15,9 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "MemoryPin — Your travels, alive on your wall",
+  title: "MemoryPin — Attach a memory to anything",
   description:
-    "Pin photos and videos to real-world locations. Tap an NFC sticker to relive the memory.",
+    "Tag any object with an NFC sticker. Tap it to relive the photos, videos, and story behind it.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
