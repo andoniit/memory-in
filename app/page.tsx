@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { LandingGlobe } from "@/components/LandingGlobe";
 import { btnPrimary } from "@/lib/ui";
 
 const steps = [
@@ -14,7 +13,7 @@ const steps = [
 
 export default function LandingPage() {
   return (
-    <main className="min-h-dvh bg-background">
+    <main className="min-h-dvh">
       {/* Top bar */}
       <header className="mx-auto flex max-w-5xl items-center justify-between px-page py-5">
         <div className="flex items-center gap-2">
@@ -28,13 +27,9 @@ export default function LandingPage() {
         </Link>
       </header>
 
-      {/* Hero — white background, rotating gray globe (no interaction) */}
+      {/* Hero — content overlays the shared rotating globe from the root layout */}
       <section className="relative px-page pt-4">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-[min(92vw,460px)] w-[min(92vw,460px)] -translate-x-1/2 md:h-[600px] md:w-[600px]">
-          <LandingGlobe />
-        </div>
-
-        <div className="relative mx-auto flex min-h-[60vh] max-w-5xl flex-col justify-end pb-10 md:min-h-[72vh] md:items-center md:justify-center md:pb-16 md:text-center">
+        <div className="relative mx-auto flex min-h-[64vh] max-w-5xl flex-col justify-end pb-10 md:min-h-[78vh] md:items-center md:justify-center md:pb-16 md:text-center">
           <span className="index-num">01 — MEMORY TAGS</span>
           <h1 className="mt-3 max-w-[16ch] text-display text-balance md:text-[3.25rem] md:leading-[1.05]">
             Attach a memory to anything.

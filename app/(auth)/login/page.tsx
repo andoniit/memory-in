@@ -21,8 +21,8 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-dvh flex-col px-page">
-      <header className="flex items-center gap-2 py-5">
+    <main className="flex min-h-dvh flex-col">
+      <header className="mx-auto flex w-full max-w-5xl items-center gap-2 px-page py-5">
         <span className="h-2.5 w-2.5 rounded-full bg-accent" />
         <Link
           href="/"
@@ -32,20 +32,22 @@ function LoginForm() {
         </Link>
       </header>
 
-      <div className="flex flex-1 flex-col justify-center pb-16">
-        <span className="index-num">02 — ACCESS</span>
-        <h1 className="mt-3 text-display">Sign in</h1>
-        <p className="mt-2 max-w-xs text-body text-muted">
-          Continue with Google to start tagging memories.
-        </p>
+      <div className="flex flex-1 items-center justify-center px-page pb-16">
+        <div className="w-full max-w-sm md:flex md:flex-col md:items-center md:text-center">
+          <span className="index-num">02 — ACCESS</span>
+          <h1 className="mt-3 text-display">Sign in</h1>
+          <p className="mt-2 max-w-xs text-body text-muted">
+            Continue with Google to start tagging memories.
+          </p>
 
-        <button
-          onClick={signInWithGoogle}
-          className={`${btnPrimary} mt-8 w-full`}
-        >
-          <GoogleMark />
-          Continue with Google
-        </button>
+          <button
+            onClick={signInWithGoogle}
+            className={`${btnPrimary} mt-8 w-full`}
+          >
+            <GoogleMark />
+            Continue with Google
+          </button>
+        </div>
       </div>
     </main>
   );
