@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCircle, getCircleMembers } from "@/lib/auth";
 import { updateProfile, signOut } from "./actions";
 import { InviteLink } from "@/components/InviteLink";
+import { JoinCodeForm } from "@/components/JoinCodeForm";
 import { btnPrimary, btnSecondary, field } from "@/lib/ui";
 import { MAX_CIRCLE_MEMBERS } from "@/types/index";
 
@@ -83,9 +84,15 @@ export default async function SettingsPage() {
           {canInvite ? (
             <div className="mt-5 border-t border-border pt-5">
               <p className="mb-3 text-caption text-muted">
-                Invite a partner or friends — share this link (up to{" "}
+                Invite a partner or friends — send them this code (up to{" "}
                 {MAX_CIRCLE_MEMBERS} total).
               </p>
+              <div className="mb-3 flex items-center justify-between rounded-ctl border border-border bg-surface-2 px-4 py-3">
+                <span className="font-mono text-heading tracking-[0.3em]">
+                  {circle?.invite_code}
+                </span>
+                <span className="label">Your code</span>
+              </div>
               <InviteLink url={inviteUrl} />
             </div>
           ) : (
@@ -102,6 +109,18 @@ export default async function SettingsPage() {
           </p>
         )}
       </section>
+
+      {members.length === 1 && (
+        <section className="mb-10">
+          <p className="label mb-3">Join a friend&apos;s circle</p>
+          <div className="rounded-card border border-border bg-surface p-5">
+            <p className="mb-3 text-caption text-muted">
+              Got a code from a friend? Enter it to share their memories.
+            </p>
+            <JoinCodeForm />
+          </div>
+        </section>
+      )}
 
       <form action={signOut}>
         <button className={`${btnSecondary} w-full`}>Sign out</button>

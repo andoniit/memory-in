@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Loader2, MapPin, Check } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { InviteLink } from "@/components/InviteLink";
 import { btnPrimary, btnSecondary, field, iconBtnGhost } from "@/lib/ui";
 import type { GeocodeResult } from "@/app/api/geocode/route";
@@ -91,6 +92,15 @@ export default function NewPinPage() {
           Write this URL to your NFC sticker with the free{" "}
           <span className="text-ink">NFC Tools</span> app (Write → URL/URI),
           then stick it on the object.
+        </p>
+
+        <div className="mt-6 flex justify-center">
+          <div className="rounded-card border border-border bg-white p-4">
+            <QRCodeSVG value={created.url} size={160} fgColor="#171717" />
+          </div>
+        </div>
+        <p className="mt-3 text-center text-caption text-muted">
+          Or scan this QR to open the pin.
         </p>
 
         <div className="mt-5">

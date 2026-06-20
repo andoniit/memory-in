@@ -1,49 +1,22 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Loader2 } from "lucide-react";
-import { btnPrimary, btnSecondary, field } from "@/lib/ui";
+import { btnPrimary } from "@/lib/ui";
 
 function LoginForm() {
   const params = useSearchParams();
   const redirect = params.get("redirect") ?? "";
-  const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">(
-    "idle",
-  );
-  const [error, setError] = useState<string | null>(null);
-
-  const callbackUrl = () => {
-    const url = new URL("/auth/callback", window.location.origin);
-    if (redirect) url.searchParams.set("redirect", redirect);
-    return url.toString();
-  };
-
-  async function sendMagicLink(e: React.FormEvent) {
-    e.preventDefault();
-    setStatus("sending");
-    setError(null);
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: callbackUrl() },
-    });
-    if (error) {
-      setError(error.message);
-      setStatus("error");
-    } else {
-      setStatus("sent");
-    }
-  }
 
   async function signInWithGoogle() {
+    const url = new URL("/auth/callback", window.location.origin);
+    if (redirect) url.searchParams.set("redirect", redirect);
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: callbackUrl() },
+      options: { redirectTo: url.toString() },
     });
   }
 
@@ -63,59 +36,29 @@ function LoginForm() {
         <span className="index-num">02 — ACCESS</span>
         <h1 className="mt-3 text-display">Sign in</h1>
         <p className="mt-2 max-w-xs text-body text-muted">
-          We&apos;ll email you a secure magic link — no password.
+          Continue with Google to start tagging memories.
         </p>
 
-        {status === "sent" ? (
-          <div className="mt-8 rounded-card border border-border bg-surface p-5">
-            <p className="label">Check your inbox</p>
-            <p className="mt-2 text-body">
-              A magic link is on its way to{" "}
-              <span className="font-medium">{email}</span>.
-            </p>
-          </div>
-        ) : (
-          <>
-            <form onSubmit={sendMagicLink} className="mt-8 space-y-3">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className={field}
-              />
-              <button
-                type="submit"
-                disabled={status === "sending"}
-                className={`${btnPrimary} w-full`}
-              >
-                {status === "sending" ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Send magic link"
-                )}
-              </button>
-            </form>
-
-            <div className="my-5 flex items-center gap-3">
-              <span className="h-px flex-1 bg-border" />
-              <span className="label">or</span>
-              <span className="h-px flex-1 bg-border" />
-            </div>
-
-            <button
-              onClick={signInWithGoogle}
-              className={`${btnSecondary} w-full`}
-            >
-              Continue with Google
-            </button>
-
-            {error && <p className="mt-4 text-caption text-accent">{error}</p>}
-          </>
-        )}
+        <button
+          onClick={signInWithGoogle}
+          className={`${btnPrimary} mt-8 w-full`}
+        >
+          <GoogleMark />
+          Continue with Google
+        </button>
       </div>
     </main>
+  );
+}
+
+function GoogleMark() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#fff"
+        d="M21.35 11.1H12v2.98h5.35c-.23 1.4-1.65 4.1-5.35 4.1a5.9 5.9 0 0 1 0-11.8c1.68 0 2.8.72 3.45 1.34l2.35-2.27C16.4 3.9 14.4 3 12 3a9 9 0 1 0 0 18c5.2 0 8.65-3.65 8.65-8.8 0-.6-.07-1.05-.3-1.1z"
+      />
+    </svg>
   );
 }
 

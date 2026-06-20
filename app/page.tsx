@@ -1,61 +1,53 @@
 import Link from "next/link";
-import { LandingGlobe } from "@/components/LandingGlobe";
+import { OrbitMark } from "@/components/OrbitMark";
+import { btnPrimary } from "@/lib/ui";
 
 const steps = [
-  { n: "01", title: "Tag", text: "Stick an NFC tag on anything — a book, a wall, a painting, a fridge magnet." },
+  {
+    n: "01",
+    title: "Tag",
+    text: "Stick an NFC tag on anything — a book, a wall, a painting, a fridge magnet.",
+  },
   { n: "02", title: "Attach", text: "Add photos, videos, and notes to it." },
   { n: "03", title: "Scan", text: "Tap the tag to relive the memory." },
 ];
 
 export default function LandingPage() {
   return (
-    <main className="min-h-dvh">
-      {/* Dark hero with the live globe */}
-      <section
-        className="relative flex h-[90vh] flex-col overflow-hidden text-white"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 40%, #0a0e15 0%, #05070a 60%, #000000 100%)",
-        }}
-      >
-        <header className="relative z-10 flex items-center justify-between px-page py-5">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-accent" />
-            <span className="font-mono text-micro uppercase tracking-[0.2em]">
-              MemoryPin
-            </span>
-          </div>
-          <Link
-            href="/login"
-            className="font-mono text-micro uppercase tracking-[0.14em] text-white/60 hover:text-white"
-          >
-            Sign in
-          </Link>
-        </header>
+    <main className="min-h-dvh bg-background">
+      {/* Top bar */}
+      <header className="flex items-center justify-between px-page py-5">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-accent" />
+          <span className="font-mono text-micro uppercase tracking-[0.2em]">
+            MemoryPin
+          </span>
+        </div>
+        <Link href="/login" className="label hover:text-ink">
+          Sign in
+        </Link>
+      </header>
 
-        {/* Globe fills the hero (draggable in the open area) */}
-        <div className="absolute inset-0 top-10">
-          <LandingGlobe />
+      {/* Hero — white background, static gray globe (no interaction) */}
+      <section className="relative px-page pt-4">
+        <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto flex justify-center">
+          <OrbitMark className="w-[min(92vw,460px)]" />
         </div>
 
-        {/* Bottom scrim + copy */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black via-black/70 to-transparent px-page pb-9 pt-24">
-          <span className="font-mono text-micro uppercase tracking-[0.14em] text-accent">
-            01 — MEMORY TAGS
-          </span>
+        <div className="relative flex min-h-[60vh] flex-col justify-end pb-10">
+          <span className="index-num">01 — MEMORY TAGS</span>
           <h1 className="mt-3 max-w-[16ch] text-display text-balance">
             Attach a memory to anything.
           </h1>
-          <p className="mt-3 max-w-sm text-body text-white/70">
+          <p className="mt-4 max-w-sm text-body text-muted">
             Tag a book, a wall, a painting, a fridge magnet — anything. Scan the
             NFC sticker to relive the moment. No app, no login.
           </p>
-          <Link
-            href="/login"
-            className="pointer-events-auto mt-6 inline-flex min-h-[48px] items-center justify-center rounded-ctl bg-accent px-7 text-body font-medium text-white transition-colors hover:bg-accent-strong"
-          >
-            Get started
-          </Link>
+          <div className="mt-7">
+            <Link href="/login" className={btnPrimary}>
+              Get started
+            </Link>
+          </div>
         </div>
       </section>
 

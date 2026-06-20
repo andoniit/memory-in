@@ -6,6 +6,7 @@ import { getCircle } from "@/lib/auth";
 import { heroUrl } from "@/lib/cloudinary";
 import { PhotoGrid } from "@/components/pin/PhotoGrid";
 import { StorySection } from "@/components/pin/StorySection";
+import { ShareButton } from "@/components/pin/ShareButton";
 import { iconBtnGhost } from "@/lib/ui";
 import type { Memory } from "@/types/index";
 
@@ -76,15 +77,18 @@ export default async function PinPage({
         <span className="truncate font-mono text-micro uppercase tracking-[0.14em] text-muted">
           {pin.city ?? pin.title}
         </span>
-        {isMember && (
-          <Link
-            href={`/pin/${id}`}
-            aria-label="Manage pin"
-            className={`${iconBtnGhost} ml-auto`}
-          >
-            <SlidersHorizontal className="h-5 w-5" strokeWidth={1.75} />
-          </Link>
-        )}
+        <div className="ml-auto flex items-center">
+          <ShareButton title={pin.title} />
+          {isMember && (
+            <Link
+              href={`/pin/${id}`}
+              aria-label="Manage pin"
+              className={iconBtnGhost}
+            >
+              <SlidersHorizontal className="h-5 w-5" strokeWidth={1.75} />
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Hero */}
