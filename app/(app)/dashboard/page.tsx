@@ -60,7 +60,7 @@ export default async function DashboardPage() {
   return (
     <main className="min-h-dvh pb-28">
       {/* Top bar */}
-      <header className="flex items-center justify-between px-page py-4">
+      <header className="mx-auto flex max-w-5xl items-center justify-between px-page py-4">
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-accent" />
           <span className="font-mono text-micro uppercase tracking-[0.2em]">
@@ -73,24 +73,25 @@ export default async function DashboardPage() {
       </header>
 
       {/* Space for the shared globe backdrop to show through */}
-      <div aria-hidden className="h-[38vh]" />
+      <div aria-hidden className="h-[34vh] md:h-[44vh]" />
 
-      {/* Pin list */}
-      <div className="flex items-center justify-between border-t border-border bg-background/70 px-page pb-3 pt-6 backdrop-blur-sm">
-        <span className="label">Your memories</span>
-        <span className="font-mono text-micro tabular-nums text-muted">
-          {String(enriched.length).padStart(2, "0")}
-        </span>
-      </div>
-
-      {enriched.length > 0 ? (
-        <div className="grid grid-cols-2 gap-3 px-page">
-          {enriched.map((pin) => (
-            <PinCard key={pin.id} pin={pin} />
-          ))}
+      <div className="mx-auto max-w-5xl">
+        {/* Pin list */}
+        <div className="flex items-center justify-between border-t border-border bg-background/70 px-page pb-3 pt-6 backdrop-blur-sm">
+          <span className="label">Your memories</span>
+          <span className="font-mono text-micro tabular-nums text-muted">
+            {String(enriched.length).padStart(2, "0")}
+          </span>
         </div>
-      ) : (
-        <div className="px-page py-12 text-center">
+
+        {enriched.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 px-page sm:grid-cols-3 lg:grid-cols-4">
+            {enriched.map((pin) => (
+              <PinCard key={pin.id} pin={pin} />
+            ))}
+          </div>
+        ) : (
+          <div className="px-page py-12 text-center">
           <p className="text-body">No pins yet.</p>
           <p className="mx-auto mt-1 max-w-xs text-body text-muted">
             Create your first memory pin, then program an NFC sticker with its
@@ -103,7 +104,8 @@ export default async function DashboardPage() {
             <Plus className="h-5 w-5" /> New pin
           </Link>
         </div>
-      )}
+        )}
+      </div>
 
       <BottomNav />
     </main>

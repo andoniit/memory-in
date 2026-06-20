@@ -15,7 +15,7 @@ export function GlobeBackground() {
       aria-hidden
       className="pointer-events-none fixed inset-0 z-0 bg-background"
     >
-      <div className="absolute left-1/2 top-0 h-[min(92vw,460px)] w-[min(92vw,460px)] -translate-x-1/2">
+      <div className="absolute left-1/2 top-0 h-[min(92vw,460px)] w-[min(92vw,460px)] -translate-x-1/2 md:h-[640px] md:w-[640px]">
         <LandingGlobeImpl />
       </div>
     </div>

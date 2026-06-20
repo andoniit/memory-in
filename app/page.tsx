@@ -16,7 +16,7 @@ export default function LandingPage() {
   return (
     <main className="min-h-dvh bg-background">
       {/* Top bar */}
-      <header className="flex items-center justify-between px-page py-5">
+      <header className="mx-auto flex max-w-5xl items-center justify-between px-page py-5">
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-accent" />
           <span className="font-mono text-micro uppercase tracking-[0.2em]">
@@ -28,15 +28,15 @@ export default function LandingPage() {
         </Link>
       </header>
 
-      {/* Hero — white background, static gray globe (no interaction) */}
+      {/* Hero — white background, rotating gray globe (no interaction) */}
       <section className="relative px-page pt-4">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-[min(92vw,460px)] w-[min(92vw,460px)] -translate-x-1/2">
+        <div className="pointer-events-none absolute left-1/2 top-0 h-[min(92vw,460px)] w-[min(92vw,460px)] -translate-x-1/2 md:h-[600px] md:w-[600px]">
           <LandingGlobe />
         </div>
 
-        <div className="relative flex min-h-[60vh] flex-col justify-end pb-10">
+        <div className="relative mx-auto flex min-h-[60vh] max-w-5xl flex-col justify-end pb-10 md:min-h-[72vh] md:items-center md:justify-center md:pb-16 md:text-center">
           <span className="index-num">01 — MEMORY TAGS</span>
-          <h1 className="mt-3 max-w-[16ch] text-display text-balance">
+          <h1 className="mt-3 max-w-[16ch] text-display text-balance md:text-[3.25rem] md:leading-[1.05]">
             Attach a memory to anything.
           </h1>
           <p className="mt-4 max-w-sm text-body text-muted">
@@ -53,21 +53,23 @@ export default function LandingPage() {
 
       {/* Steps */}
       <section className="border-t border-border">
-        {steps.map(({ n, title, text }) => (
-          <div
-            key={n}
-            className="flex items-baseline gap-5 border-b border-border px-page py-6"
-          >
-            <span className="index-num pt-1">{n}</span>
-            <div>
-              <p className="text-heading">{title}</p>
-              <p className="mt-1 text-body text-muted">{text}</p>
+        <div className="mx-auto grid max-w-5xl md:grid-cols-3">
+          {steps.map(({ n, title, text }) => (
+            <div
+              key={n}
+              className="flex items-baseline gap-5 border-b border-border px-page py-6 md:flex-col md:gap-3 md:border-b-0 md:border-r md:last:border-r-0"
+            >
+              <span className="index-num pt-1">{n}</span>
+              <div>
+                <p className="text-heading">{title}</p>
+                <p className="mt-1 text-body text-muted">{text}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </section>
 
-      <footer className="px-page py-8">
+      <footer className="mx-auto max-w-5xl px-page py-8">
         <p className="label">One tap. Every memory, right where you left it.</p>
       </footer>
     </main>

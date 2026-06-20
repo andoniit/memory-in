@@ -68,7 +68,7 @@ export default async function PinPage({
     : null;
 
   return (
-    <main className="min-h-dvh pb-28">
+    <main className="mx-auto min-h-dvh max-w-2xl pb-28">
       {/* Top bar */}
       <div className="sticky top-0 z-10 flex items-center gap-1 bg-background/85 px-2 pt-safe backdrop-blur">
         <Link href="/dashboard" aria-label="Back" className={iconBtnGhost}>
@@ -150,7 +150,7 @@ export default async function PinPage({
         <div className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface/95 p-page pb-[calc(env(safe-area-inset-bottom)+16px)] backdrop-blur">
           <Link
             href={`/p/${id}/upload`}
-            className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-ctl bg-accent text-body font-medium text-white transition-colors hover:bg-accent-strong"
+            className="mx-auto flex min-h-[48px] w-full max-w-2xl items-center justify-center gap-2 rounded-ctl bg-accent text-body font-medium text-white transition-colors hover:bg-accent-strong"
           >
             <Plus className="h-5 w-5" /> Add your memory
           </Link>
