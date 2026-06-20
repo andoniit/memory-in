@@ -90,7 +90,7 @@ export default function NewPinPage() {
         <p className="mt-3 text-body text-muted">
           Write this URL to your NFC sticker with the free{" "}
           <span className="text-ink">NFC Tools</span> app (Write → URL/URI),
-          then stick it on your map.
+          then stick it on the object.
         </p>
 
         <div className="mt-5">
@@ -102,7 +102,7 @@ export default function NewPinPage() {
             "Open NFC Tools → Write → Add a record → URL/URI",
             "Paste the URL above",
             "Tap Write, then hold your phone to the sticker",
-            "Stick it on a matte (non-glass) map and tap to test",
+            "Stick it on the object — matte surface, not behind glass — and tap to test",
           ].map((step, i) => (
             <li key={i} className="flex gap-4">
               <span className="index-num pt-0.5">
@@ -144,14 +144,18 @@ export default function NewPinPage() {
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Our Paris trip"
+            placeholder="Grandma's recipe book"
             className={field}
           />
         </div>
 
-        {/* City search */}
+        {/* Optional place search */}
         <div>
-          <label className="label mb-2 block">Location</label>
+          <label className="label mb-2 block">Place (optional)</label>
+          <p className="mb-2 text-caption text-muted">
+            Add a place to show it on your globe — or skip it for an object like
+            a book or fridge magnet.
+          </p>
           <div className="relative">
             <input
               value={query}
@@ -195,7 +199,7 @@ export default function NewPinPage() {
         </div>
 
         <div>
-          <label className="label mb-2 block">Visit date</label>
+          <label className="label mb-2 block">Date (optional)</label>
           <input
             type="date"
             value={visitDate}

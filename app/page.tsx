@@ -2,9 +2,9 @@ import Link from "next/link";
 import { LandingGlobe } from "@/components/LandingGlobe";
 
 const steps = [
-  { n: "01", title: "Pin", text: "Place an NFC tag on your wall map." },
-  { n: "02", title: "Upload", text: "Add photos and videos from anywhere." },
-  { n: "03", title: "Tap", text: "Tap the tag to open the trip." },
+  { n: "01", title: "Tag", text: "Stick an NFC tag on anything — a book, a wall, a painting, a fridge magnet." },
+  { n: "02", title: "Attach", text: "Add photos, videos, and notes to it." },
+  { n: "03", title: "Scan", text: "Tap the tag to relive the memory." },
 ];
 
 export default function LandingPage() {
@@ -41,14 +41,14 @@ export default function LandingPage() {
         {/* Bottom scrim + copy */}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black via-black/70 to-transparent px-page pb-9 pt-24">
           <span className="font-mono text-micro uppercase tracking-[0.14em] text-accent">
-            01 — MEMORY MAP
+            01 — MEMORY TAGS
           </span>
-          <h1 className="mt-3 max-w-[14ch] text-display text-balance">
-            Memories, mapped to the places you&apos;ve been.
+          <h1 className="mt-3 max-w-[16ch] text-display text-balance">
+            Attach a memory to anything.
           </h1>
           <p className="mt-3 max-w-sm text-body text-white/70">
-            Pin photos and videos to real locations. Tap an NFC sticker to open
-            the trip.
+            Tag a book, a wall, a painting, a fridge magnet — anything. Scan the
+            NFC sticker to relive the moment. No app, no login.
           </p>
           <Link
             href="/login"
@@ -76,7 +76,7 @@ export default function LandingPage() {
       </section>
 
       <footer className="px-page py-8">
-        <p className="label">Satellite-simple memories — pole to pole.</p>
+        <p className="label">One tap. Every memory, right where you left it.</p>
       </footer>
     </main>
   );

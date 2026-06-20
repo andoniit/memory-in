@@ -11,8 +11,9 @@ interface StoryInput {
 }
 
 /**
- * Generate a short, warm travel memory for a personal scrapbook.
- * Uses Claude Opus 4.8 (current default model).
+ * Generate a short, warm memory for a personal scrapbook. The pin can be a
+ * place or any object (a book, a wall, a painting, a fridge magnet), so the
+ * prompt stays object-agnostic. Uses Claude Opus 4.8 (current default model).
  */
 export async function generateTravelStory({
   city,
@@ -31,14 +32,16 @@ export async function generateTravelStory({
     ? captions.join("\n")
     : "(no captions provided)";
 
-  const prompt = `You are writing a short, warm travel memory for someone's digital scrapbook.
+  const subject = city ? `${title} (${city})` : title;
 
-Location: ${city ?? title}
+  const prompt = `You are writing a short, warm memory for someone's digital scrapbook. The memory is attached to a real thing — it might be a place, but it could just as easily be an object like a book, a wall, a painting, or a fridge magnet.
+
+Subject: ${subject}
 Date: ${dateLabel}
 Memory captions:
 ${captionBlock}
 
-Write a 2-3 sentence travel story in a warm, personal first-person voice that captures the feeling of this trip. Be specific, warm, and poetic. No more than 80 words. Do not use the words "unforgettable" or "magical". Return only the story text, with no preamble.`;
+Write a 2-3 sentence story in a warm, personal first-person voice that captures the feeling of this memory. Be specific, warm, and poetic. Do not assume travel unless the captions imply it. No more than 80 words. Do not use the words "unforgettable" or "magical". Return only the story text, with no preamble.`;
 
   const response = await client.messages.create({
     model: "claude-opus-4-8",

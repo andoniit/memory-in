@@ -6,7 +6,7 @@ import { generateTravelStory } from "@/lib/claude";
 /**
  * POST /api/ai/story  { pin_id }
  * Generates a travel story from the pin's details + memory captions, saves it
- * to pins.story, and returns it. Couple members only.
+ * to pins.story, and returns it. Circle members only.
  */
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
