@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { OrbitMark } from "@/components/OrbitMark";
+import { LandingGlobe } from "@/components/LandingGlobe";
 import { btnPrimary } from "@/lib/ui";
 
 const steps = [
@@ -30,8 +30,8 @@ export default function LandingPage() {
 
       {/* Hero — white background, static gray globe (no interaction) */}
       <section className="relative px-page pt-4">
-        <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto flex justify-center">
-          <OrbitMark className="w-[min(92vw,460px)]" />
+        <div className="pointer-events-none absolute left-1/2 top-0 h-[min(92vw,460px)] w-[min(92vw,460px)] -translate-x-1/2">
+          <LandingGlobe />
         </div>
 
         <div className="relative flex min-h-[60vh] flex-col justify-end pb-10">

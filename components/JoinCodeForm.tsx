@@ -1,15 +1,27 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { joinByCode } from "@/app/(app)/settings/actions";
 import { field } from "@/lib/ui";
 
 export function JoinCodeForm() {
-  const [error, action, pending] = useActionState(joinByCode, null);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    const formData = new FormData(e.currentTarget);
+    startTransition(async () => {
+      // Resolves only on failure; success redirects server-side.
+      const result = await joinByCode(null, formData);
+      if (result) setError(result);
+    });
+  }
 
   return (
-    <form action={action} className="flex flex-col gap-2">
+    <form onSubmit={onSubmit} className="flex flex-col gap-2">
       <div className="flex gap-2">
         <input
           name="code"
