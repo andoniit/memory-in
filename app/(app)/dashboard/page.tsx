@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getCircle } from "@/lib/auth";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { PinCard } from "@/components/pin/PinCard";
-import { GlobePanel, type GlobePinFull } from "@/components/dashboard/GlobePanel";
 import { iconBtnGhost } from "@/lib/ui";
 import type { Memory, Pin, PinWithMemories } from "@/types/index";
 
@@ -58,17 +57,6 @@ export default async function DashboardPage() {
     };
   });
 
-  const globePins: GlobePinFull[] = enriched.map((p) => ({
-    id: p.id,
-    lat: p.lat,
-    lng: p.lng,
-    title: p.title,
-    city: p.city,
-    emoji: p.emoji,
-    thumb_url: p.cover?.thumb_url ?? null,
-    memory_count: p.memory_count,
-  }));
-
   return (
     <main className="min-h-dvh pb-28">
       {/* Top bar */}
@@ -84,11 +72,11 @@ export default async function DashboardPage() {
         </Link>
       </header>
 
-      {/* Globe */}
-      <GlobePanel pins={globePins} />
+      {/* Space for the shared globe backdrop to show through */}
+      <div aria-hidden className="h-[38vh]" />
 
       {/* Pin list */}
-      <div className="flex items-center justify-between border-t border-border px-page pb-3 pt-6">
+      <div className="flex items-center justify-between border-t border-border bg-background/70 px-page pb-3 pt-6 backdrop-blur-sm">
         <span className="label">Your memories</span>
         <span className="font-mono text-micro tabular-nums text-muted">
           {String(enriched.length).padStart(2, "0")}

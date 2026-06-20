@@ -2,10 +2,11 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCircle, getCircleMembers } from "@/lib/auth";
-import { updateProfile, signOut } from "./actions";
+import { updateProfile } from "./actions";
 import { InviteLink } from "@/components/InviteLink";
 import { JoinCodeForm } from "@/components/JoinCodeForm";
-import { btnPrimary, btnSecondary, field } from "@/lib/ui";
+import { SignOutButton } from "@/components/SignOutButton";
+import { btnPrimary, field } from "@/lib/ui";
 import { MAX_CIRCLE_MEMBERS } from "@/types/index";
 
 export default async function SettingsPage() {
@@ -122,9 +123,7 @@ export default async function SettingsPage() {
         </section>
       )}
 
-      <form action={signOut}>
-        <button className={`${btnSecondary} w-full`}>Sign out</button>
-      </form>
+      <SignOutButton />
     </main>
   );
 }
