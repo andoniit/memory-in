@@ -161,11 +161,12 @@ export function UploadForm({
 
       {tab !== "note" && (
         <>
+          {/* No `capture` → iOS shows Photo Library / Take Photo / Choose File
+              (the camera-only behaviour came from the capture attribute). */}
           <input
             ref={fileRef}
             type="file"
             accept={accept}
-            capture="environment"
             multiple
             hidden
             onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
