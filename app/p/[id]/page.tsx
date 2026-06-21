@@ -145,8 +145,8 @@ export default async function PinPage({
         )}
       </section>
 
-      {/* Add memory */}
-      {(isMember || !user) && (
+      {/* Add memory — circle members only (scanners just view) */}
+      {isMember && (
         <div className="fixed inset-x-0 bottom-0 z-10 border-t border-border bg-surface/95 p-page pb-[calc(env(safe-area-inset-bottom)+16px)] backdrop-blur">
           <Link
             href={`/p/${id}/upload`}
