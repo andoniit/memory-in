@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCircle } from "@/lib/auth";
 import { pinId } from "@/lib/nanoid";
 import { createPinSchema } from "@/lib/validation";
+import { getBaseUrl } from "@/lib/base-url";
 
 /** GET /api/pins — all pins for the authenticated couple (dashboard/globe). */
 export async function GET() {
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = await getBaseUrl();
   return NextResponse.json(
     { id, url: `${appUrl}/p/${id}` },
     { status: 201 },

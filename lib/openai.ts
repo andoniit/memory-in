@@ -1,8 +1,5 @@
 import OpenAI from "openai";
 
-// Reads OPENAI_API_KEY from the environment.
-const client = new OpenAI();
-
 interface StoryInput {
   city: string | null;
   title: string;
@@ -42,6 +39,10 @@ Memory captions:
 ${captionBlock}
 
 Write a 2-3 sentence story in a warm, personal first-person voice that captures the feeling of this memory. Be specific, warm, and poetic. Do not assume travel unless the captions imply it. No more than 80 words. Do not use the words "unforgettable" or "magical". Return only the story text, with no preamble.`;
+
+  // Construct lazily (the SDK throws at construction without a key) so importing
+  // this module during build never requires OPENAI_API_KEY.
+  const client = new OpenAI();
 
   const response = await client.chat.completions.create({
     model: "gpt-4o-mini",

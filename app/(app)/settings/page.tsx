@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCircle, getCircleMembers } from "@/lib/auth";
+import { getBaseUrl } from "@/lib/base-url";
 import { updateProfile } from "./actions";
 import { InviteLink } from "@/components/InviteLink";
 import { JoinCodeForm } from "@/components/JoinCodeForm";
@@ -26,7 +27,7 @@ export default async function SettingsPage() {
   const members = circle ? await getCircleMembers(circle, user.id) : [];
   const canInvite = !!circle && members.length < MAX_CIRCLE_MEMBERS;
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = await getBaseUrl();
   const inviteUrl = circle ? `${appUrl}/invite/${circle.invite_code}` : "";
 
   return (
