@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -9,15 +9,20 @@ import { btnPrimary } from "@/lib/ui";
 function LoginForm() {
   const params = useSearchParams();
   const redirect = params.get("redirect") ?? "";
+  const [error, setError] = useState<string | null>(
+    params.get("error") ? "Sign-in didn't complete. Please try again." : null,
+  );
 
   async function signInWithGoogle() {
+    setError(null);
     const url = new URL("/auth/callback", window.location.origin);
     if (redirect) url.searchParams.set("redirect", redirect);
     const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: url.toString() },
     });
+    if (error) setError(error.message);
   }
 
   return (
@@ -47,6 +52,10 @@ function LoginForm() {
             <GoogleMark />
             Continue with Google
           </button>
+
+          {error && (
+            <p className="mt-4 max-w-xs text-caption text-accent">{error}</p>
+          )}
         </div>
       </div>
     </main>
