@@ -1,7 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 
-// Reads ANTHROPIC_API_KEY from the environment.
-const client = new Anthropic();
+// Reads OPENAI_API_KEY from the environment.
+const client = new OpenAI();
 
 interface StoryInput {
   city: string | null;
@@ -13,7 +13,7 @@ interface StoryInput {
 /**
  * Generate a short, warm memory for a personal scrapbook. The pin can be a
  * place or any object (a book, a wall, a painting, a fridge magnet), so the
- * prompt stays object-agnostic. Uses Claude Opus 4.8 (current default model).
+ * prompt stays object-agnostic. Uses the OpenAI API.
  */
 export async function generateTravelStory({
   city,
@@ -43,12 +43,11 @@ ${captionBlock}
 
 Write a 2-3 sentence story in a warm, personal first-person voice that captures the feeling of this memory. Be specific, warm, and poetic. Do not assume travel unless the captions imply it. No more than 80 words. Do not use the words "unforgettable" or "magical". Return only the story text, with no preamble.`;
 
-  const response = await client.messages.create({
-    model: "claude-opus-4-8",
-    max_tokens: 400,
+  const response = await client.chat.completions.create({
+    model: "gpt-4o-mini",
+    max_tokens: 300,
     messages: [{ role: "user", content: prompt }],
   });
 
-  const block = response.content.find((b) => b.type === "text");
-  return block && block.type === "text" ? block.text.trim() : "";
+  return response.choices[0]?.message?.content?.trim() ?? "";
 }

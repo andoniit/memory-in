@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCircle } from "@/lib/auth";
-import { generateTravelStory } from "@/lib/claude";
+import { generateTravelStory } from "@/lib/openai";
 
 /**
  * POST /api/ai/story  { pin_id }
@@ -17,9 +17,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
-      { error: "AI stories are not configured (missing ANTHROPIC_API_KEY)." },
+      { error: "AI stories are not configured (missing OPENAI_API_KEY)." },
       { status: 503 },
     );
   }
