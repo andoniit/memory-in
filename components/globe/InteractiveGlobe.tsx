@@ -68,15 +68,19 @@ function makeGraticule() {
 export default function InteractiveGlobe({
   pins,
   onPinTap,
+  onHover,
   highlightId,
 }: {
   pins: GlobePin[];
   onPinTap?: (id: string) => void;
+  onHover?: (id: string | null) => void;
   highlightId?: string | null;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const tapRef = useRef(onPinTap);
   tapRef.current = onPinTap;
+  const hoverCbRef = useRef(onHover);
+  hoverCbRef.current = onHover;
   const highlightRef = useRef<string | null | undefined>(highlightId);
   highlightRef.current = highlightId;
 
@@ -220,8 +224,25 @@ export default function InteractiveGlobe({
       const hit = raycaster.intersectObjects(pinMeshes)[0];
       if (hit) tapRef.current?.(hit.object.userData.id as string);
     };
+    // Hover (desktop) → pointer cursor + enlarge the dot + emit the id.
+    let hoverId: string | null = null;
+    renderer.domElement.style.cursor = "grab";
+    const onMove = (e: PointerEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      ndc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      ndc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(ndc, camera);
+      const hit = raycaster.intersectObjects(pinMeshes)[0];
+      const id = hit ? (hit.object.userData.id as string) : null;
+      if (id !== hoverId) {
+        hoverId = id;
+        renderer.domElement.style.cursor = id ? "pointer" : "grab";
+        hoverCbRef.current?.(id);
+      }
+    };
     renderer.domElement.addEventListener("pointerdown", onDown);
     renderer.domElement.addEventListener("pointerup", onUp);
+    renderer.domElement.addEventListener("pointermove", onMove);
 
     const resize = () => {
       const w = mount.clientWidth;
@@ -259,7 +280,8 @@ export default function InteractiveGlobe({
 
       const pulse = 1 + Math.sin(t * 2) * 0.4;
       for (let i = 0; i < pinMeshes.length; i++) {
-        const hl = pinMeshes[i].userData.id === hid;
+        const id = pinMeshes[i].userData.id;
+        const hl = id === hid || id === hoverId;
         const ds = THREE.MathUtils.lerp(pinMeshes[i].scale.x, hl ? 2.4 : 1, 0.2);
         pinMeshes[i].scale.setScalar(ds);
         pulses[i].scale.setScalar(pulse * (hl ? 1.8 : 1));
@@ -280,6 +302,7 @@ export default function InteractiveGlobe({
       controls.dispose();
       renderer.domElement.removeEventListener("pointerdown", onDown);
       renderer.domElement.removeEventListener("pointerup", onUp);
+      renderer.domElement.removeEventListener("pointermove", onMove);
       dotTex.dispose();
       scene.traverse((o) => {
         const m = o as THREE.Mesh & THREE.Points;

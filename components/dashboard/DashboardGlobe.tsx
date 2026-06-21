@@ -25,7 +25,11 @@ export function DashboardGlobe({ pins }: { pins: DashPin[] }) {
   const params = useSearchParams();
   const [selected, setSelected] = useState<DashPin | null>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [cursor, setCursor] = useState({ x: 0, y: 0 });
   const [panelOpen, setPanelOpen] = useState(false);
+
+  const hoveredPin = hovered ? pins.find((p) => p.id === hovered) : null;
 
   // Open the panel when arriving via the Memories nav link (?view=memories).
   useEffect(() => {
@@ -33,12 +37,26 @@ export function DashboardGlobe({ pins }: { pins: DashPin[] }) {
   }, [params]);
 
   return (
-    <div className="absolute inset-0">
+    <div
+      className="absolute inset-0"
+      onPointerMove={(e) => setCursor({ x: e.clientX, y: e.clientY })}
+    >
       <InteractiveGlobe
         pins={pins}
         highlightId={highlight}
+        onHover={setHovered}
         onPinTap={(id) => setSelected(pins.find((p) => p.id === id) ?? null)}
       />
+
+      {/* Hover tooltip (desktop) */}
+      {hoveredPin && (
+        <div
+          className="pointer-events-none fixed z-30 -translate-x-1/2 -translate-y-[150%] whitespace-nowrap rounded-full bg-ink/90 px-2.5 py-1 text-micro font-medium text-white shadow-lg"
+          style={{ left: cursor.x, top: cursor.y }}
+        >
+          {hoveredPin.title}
+        </div>
+      )}
 
       {/* Tap-a-point preview */}
       <Drawer.Root
