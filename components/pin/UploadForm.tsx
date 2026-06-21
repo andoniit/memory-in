@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, ImagePlus, Loader2 } from "lucide-react";
 import { iconBtnGhost } from "@/lib/ui";
+import { GooglePhotosButton } from "@/components/pin/GooglePhotosButton";
 
 type Tab = "photo" | "video" | "note";
 
@@ -180,6 +181,20 @@ export function UploadForm({
                 : `Tap to choose ${tab}`}
             </span>
           </button>
+
+          <div className="my-3 flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" />
+            <span className="label">or</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          <GooglePhotosButton
+            pinId={pinId}
+            onImported={() => {
+              router.push(`/p/${pinId}`);
+              router.refresh();
+            }}
+          />
         </>
       )}
 

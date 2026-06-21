@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Loader2, Nfc } from "lucide-react";
+import { Check, Loader2, Nfc, AppWindow } from "lucide-react";
 
 type Status = "idle" | "writing" | "done" | "error";
+
+// Free "NFC Tools" app on the App Store.
+const NFC_TOOLS_IOS = "https://apps.apple.com/app/nfc-tools/id1252962749";
 
 /**
  * Writes the pin URL straight to an NFC tag using the Web NFC API.
@@ -12,11 +15,13 @@ type Status = "idle" | "writing" | "done" | "error";
  */
 export function NfcWriter({ url }: { url: string }) {
   const [supported, setSupported] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setSupported(typeof window !== "undefined" && "NDEFReader" in window);
+    setIsIOS(/iP(hone|ad|od)/.test(navigator.userAgent));
   }, []);
 
   async function write() {
@@ -43,6 +48,29 @@ export function NfcWriter({ url }: { url: string }) {
     }
   }
 
+  if (!supported && isIOS) {
+    return (
+      <div className="rounded-card border border-border bg-surface p-4">
+        <p className="mb-3 flex items-center gap-2 text-caption text-muted">
+          <Nfc className="h-4 w-4 shrink-0" />
+          <span>
+            iPhone can&apos;t write tags from Safari. Get the free{" "}
+            <span className="font-medium text-ink">NFC Tools</span> app, then
+            paste the link below to write your sticker.
+          </span>
+        </p>
+        <a
+          href={NFC_TOOLS_IOS}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-ctl bg-ink text-body font-medium text-white transition-colors hover:bg-ink/85"
+        >
+          <AppWindow className="h-5 w-5" /> Get NFC Tools on the App Store
+        </a>
+      </div>
+    );
+  }
+
   if (!supported) {
     return (
       <div className="rounded-card border border-border bg-surface p-4">
@@ -50,8 +78,7 @@ export function NfcWriter({ url }: { url: string }) {
           <Nfc className="h-4 w-4 shrink-0" />
           <span>
             <span className="font-medium text-ink">Tap-to-write</span> works in
-            Chrome on Android. On iPhone or desktop, use the QR code or NFC
-            Tools steps below.
+            Chrome on Android. Here, use the QR code or NFC Tools steps below.
           </span>
         </p>
       </div>
