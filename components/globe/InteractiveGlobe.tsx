@@ -109,9 +109,9 @@ export default function InteractiveGlobe({
     // Pins (clickable).
     const pinMeshes: THREE.Mesh[] = [];
     const pulses: THREE.Mesh[] = [];
-    const dotGeo = new THREE.SphereGeometry(0.03, 16, 16);
+    const dotGeo = new THREE.SphereGeometry(0.016, 16, 16);
     const dotMat = new THREE.MeshBasicMaterial({ color: ACCENT });
-    const ringGeo = new THREE.RingGeometry(0.045, 0.065, 24);
+    const ringGeo = new THREE.RingGeometry(0.026, 0.036, 24);
     for (const pin of pins) {
       const p = latLngToVec3(pin.lat, pin.lng, 1.02);
       const normal = p.clone().normalize();
