@@ -6,49 +6,29 @@ import Link from "next/link";
 import { Drawer } from "vaul";
 import { ArrowUpRight } from "lucide-react";
 import { GlobeSkeleton } from "@/components/globe/GlobeSkeleton";
-import type { GlobePin } from "@/components/globe/Globe";
+import type { GlobePin } from "@/components/globe/InteractiveGlobe";
 
-export interface GlobePinFull extends GlobePin {
+export interface DashPin extends GlobePin {
+  title: string;
+  city: string | null;
   thumb_url: string | null;
   memory_count: number;
 }
 
-// Three.js only on the client — keeps it out of the pin page bundle.
-const Globe = dynamic(() => import("@/components/globe/Globe"), {
-  ssr: false,
-  loading: () => <GlobeSkeleton />,
-});
+const InteractiveGlobe = dynamic(
+  () => import("@/components/globe/InteractiveGlobe"),
+  { ssr: false, loading: () => <GlobeSkeleton /> },
+);
 
-export function GlobePanel({ pins }: { pins: GlobePinFull[] }) {
-  const [selected, setSelected] = useState<GlobePinFull | null>(null);
-  const placed = pins.filter(
-    (p) => p.lat != null && p.lng != null && !(p.lat === 0 && p.lng === 0),
-  );
+export function DashboardGlobe({ pins }: { pins: DashPin[] }) {
+  const [selected, setSelected] = useState<DashPin | null>(null);
 
   return (
-    <>
-      <div
-        id="globe"
-        className="relative h-[52vh] w-full overflow-hidden border-y border-border"
-        style={{
-          background:
-            "radial-gradient(circle at 50% 42%, #0a0e15 0%, #05070a 60%, #000000 100%)",
-        }}
-      >
-        <Globe
-          pins={placed}
-          onPinTap={(p) =>
-            setSelected(pins.find((x) => x.id === p.id) ?? null)
-          }
-        />
-        <span className="pointer-events-none absolute left-page top-3 font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-white/55">
-          {String(placed.length).padStart(2, "0")} /{" "}
-          {String(pins.length).padStart(2, "0")} placed
-        </span>
-        <span className="pointer-events-none absolute bottom-3 right-page font-mono text-[0.6875rem] uppercase tracking-[0.14em] text-white/35">
-          drag to rotate
-        </span>
-      </div>
+    <div className="absolute inset-0">
+      <InteractiveGlobe
+        pins={pins}
+        onPinTap={(id) => setSelected(pins.find((p) => p.id === id) ?? null)}
+      />
 
       <Drawer.Root
         open={!!selected}
@@ -56,13 +36,11 @@ export function GlobePanel({ pins }: { pins: GlobePinFull[] }) {
       >
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 z-30 bg-black/30" />
-          <Drawer.Content className="fixed inset-x-0 bottom-0 z-40 rounded-t-2xl border-t border-border bg-surface pb-safe outline-none">
+          <Drawer.Content className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md rounded-t-2xl border border-border bg-surface pb-safe outline-none">
             <div className="mx-auto mt-3 h-1 w-10 rounded-full bg-border" />
             {selected && (
               <div className="p-page">
-                <Drawer.Title className="sr-only">
-                  {selected.title}
-                </Drawer.Title>
+                <Drawer.Title className="sr-only">{selected.title}</Drawer.Title>
                 <div className="flex items-center gap-4">
                   <div className="h-16 w-16 shrink-0 overflow-hidden rounded-card border border-border bg-surface-2">
                     {selected.thumb_url ? (
@@ -80,9 +58,10 @@ export function GlobePanel({ pins }: { pins: GlobePinFull[] }) {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-heading">
-                      {selected.city ?? selected.title}
+                      {selected.title}
                     </p>
                     <p className="label mt-1">
+                      {selected.city ? `${selected.city} · ` : ""}
                       {selected.memory_count}{" "}
                       {selected.memory_count === 1 ? "memory" : "memories"}
                     </p>
@@ -99,6 +78,6 @@ export function GlobePanel({ pins }: { pins: GlobePinFull[] }) {
           </Drawer.Content>
         </Drawer.Portal>
       </Drawer.Root>
-    </>
+    </div>
   );
 }

@@ -13,7 +13,8 @@ const LandingGlobeImpl = dynamic(
 
 export function GlobeBackground() {
   const pathname = usePathname();
-  if (pathname?.startsWith("/p/")) return null;
+  // /p keeps it lean; /dashboard has its own interactive globe.
+  if (pathname?.startsWith("/p/") || pathname === "/dashboard") return null;
 
   return (
     <div
