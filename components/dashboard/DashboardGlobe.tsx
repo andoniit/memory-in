@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Drawer } from "vaul";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, X } from "lucide-react";
 import { GlobeSkeleton } from "@/components/globe/GlobeSkeleton";
 import type { GlobePin } from "@/components/globe/InteractiveGlobe";
 
@@ -21,15 +22,25 @@ const InteractiveGlobe = dynamic(
 );
 
 export function DashboardGlobe({ pins }: { pins: DashPin[] }) {
+  const params = useSearchParams();
   const [selected, setSelected] = useState<DashPin | null>(null);
+  const [highlight, setHighlight] = useState<string | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+
+  // Open the panel when arriving via the Memories nav link (?view=memories).
+  useEffect(() => {
+    if (params.get("view") === "memories") setPanelOpen(true);
+  }, [params]);
 
   return (
     <div className="absolute inset-0">
       <InteractiveGlobe
         pins={pins}
+        highlightId={highlight}
         onPinTap={(id) => setSelected(pins.find((p) => p.id === id) ?? null)}
       />
 
+      {/* Tap-a-point preview */}
       <Drawer.Root
         open={!!selected}
         onOpenChange={(o) => !o && setSelected(null)}
@@ -42,29 +53,10 @@ export function DashboardGlobe({ pins }: { pins: DashPin[] }) {
               <div className="p-page">
                 <Drawer.Title className="sr-only">{selected.title}</Drawer.Title>
                 <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-card border border-border bg-surface-2">
-                    {selected.thumb_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={selected.thumb_url}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="flex h-full w-full items-center justify-center text-2xl opacity-40">
-                        {selected.emoji}
-                      </span>
-                    )}
-                  </div>
+                  <Thumb pin={selected} className="h-16 w-16" />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-heading">
-                      {selected.title}
-                    </p>
-                    <p className="label mt-1">
-                      {selected.city ? `${selected.city} · ` : ""}
-                      {selected.memory_count}{" "}
-                      {selected.memory_count === 1 ? "memory" : "memories"}
-                    </p>
+                    <p className="truncate text-heading">{selected.title}</p>
+                    <p className="label mt-1">{metaLine(selected)}</p>
                   </div>
                 </div>
                 <Link
@@ -78,6 +70,87 @@ export function DashboardGlobe({ pins }: { pins: DashPin[] }) {
           </Drawer.Content>
         </Drawer.Portal>
       </Drawer.Root>
+
+      {/* Memories — sliding glass side panel */}
+      {panelOpen && (
+        <div
+          className="fixed inset-0 z-30"
+          onClick={() => setPanelOpen(false)}
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 right-0 z-40 flex w-full max-w-sm flex-col border-l border-white/50 bg-white/65 shadow-2xl backdrop-blur-xl transition-transform duration-300 ${
+          panelOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+        aria-hidden={!panelOpen}
+      >
+        <div className="flex items-center justify-between px-page pb-3 pt-safe">
+          <div className="pt-4">
+            <span className="index-num">MEMORIES</span>
+            <p className="text-heading">
+              {pins.length} {pins.length === 1 ? "pin" : "pins"}
+            </p>
+          </div>
+          <button
+            onClick={() => setPanelOpen(false)}
+            aria-label="Close"
+            className="mt-4 flex h-10 w-10 items-center justify-center rounded-full text-muted hover:bg-black/5 hover:text-ink"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-3 pb-safe">
+          {pins.length === 0 ? (
+            <p className="px-2 py-6 text-caption text-muted">
+              No memories yet. Tap + to create your first pin.
+            </p>
+          ) : (
+            <ul className="space-y-1">
+              {pins.map((p) => (
+                <li key={p.id}>
+                  <Link
+                    href={`/p/${p.id}`}
+                    onMouseEnter={() => setHighlight(p.id)}
+                    onMouseLeave={() => setHighlight(null)}
+                    onFocus={() => setHighlight(p.id)}
+                    onBlur={() => setHighlight(null)}
+                    className="flex items-center gap-3 rounded-ctl p-2 transition-colors hover:bg-white/70"
+                  >
+                    <Thumb pin={p} className="h-12 w-12" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-body font-medium">{p.title}</p>
+                      <p className="label mt-0.5 truncate">{metaLine(p)}</p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function metaLine(p: DashPin) {
+  const count = `${p.memory_count} ${p.memory_count === 1 ? "memory" : "memories"}`;
+  return p.city ? `${p.city} · ${count}` : count;
+}
+
+function Thumb({ pin, className }: { pin: DashPin; className: string }) {
+  return (
+    <div
+      className={`shrink-0 overflow-hidden rounded-card border border-border bg-surface-2 ${className}`}
+    >
+      {pin.thumb_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={pin.thumb_url} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center text-xl opacity-40">
+          {pin.emoji}
+        </span>
+      )}
     </div>
   );
 }

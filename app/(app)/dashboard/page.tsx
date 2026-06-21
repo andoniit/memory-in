@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Settings } from "lucide-react";
@@ -95,7 +96,9 @@ export default async function DashboardPage() {
       </header>
 
       {/* Interactive globe of memories */}
-      <DashboardGlobe pins={dashPins} />
+      <Suspense fallback={null}>
+        <DashboardGlobe pins={dashPins} />
+      </Suspense>
 
       {/* Empty / hint state */}
       {dashPins.length === 0 ? (

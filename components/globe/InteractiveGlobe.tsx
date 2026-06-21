@@ -68,13 +68,17 @@ function makeGraticule() {
 export default function InteractiveGlobe({
   pins,
   onPinTap,
+  highlightId,
 }: {
   pins: GlobePin[];
   onPinTap?: (id: string) => void;
+  highlightId?: string | null;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
   const tapRef = useRef(onPinTap);
   tapRef.current = onPinTap;
+  const highlightRef = useRef<string | null | undefined>(highlightId);
+  highlightRef.current = highlightId;
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -114,6 +118,7 @@ export default function InteractiveGlobe({
       const dot = new THREE.Mesh(dotGeo, dotMat);
       dot.position.copy(p);
       dot.userData.id = pin.id;
+      dot.userData.base = p.clone();
       world.add(dot);
       pinMeshes.push(dot);
       const ring = new THREE.Mesh(
@@ -185,16 +190,16 @@ export default function InteractiveGlobe({
     controls.rotateSpeed = 0.5;
     controls.minDistance = 2.6;
     controls.maxDistance = 5.5;
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.4;
+    // The world self-rotates; pause it while the user is dragging.
+    let interacting = false;
     let resumeTimer: ReturnType<typeof setTimeout>;
     controls.addEventListener("start", () => {
-      controls.autoRotate = false;
+      interacting = true;
       clearTimeout(resumeTimer);
     });
     controls.addEventListener("end", () => {
       clearTimeout(resumeTimer);
-      resumeTimer = setTimeout(() => (controls.autoRotate = true), 3000);
+      resumeTimer = setTimeout(() => (interacting = false), 2500);
     });
 
     // Tap → pin hit test.
@@ -234,12 +239,34 @@ export default function InteractiveGlobe({
     const clock = new THREE.Clock();
     const tick = () => {
       raf = requestAnimationFrame(tick);
+      const dt = clock.getDelta();
       const t = clock.elapsedTime;
-      const s = 1 + Math.sin(t * 2) * 0.4;
-      for (const ring of pulses) {
-        ring.scale.setScalar(s);
-        (ring.material as THREE.MeshBasicMaterial).opacity = 0.6 - (s - 1) * 0.7;
+      const hid = highlightRef.current ?? null;
+
+      // Spin, or rotate the highlighted pin to the front ("locate it").
+      if (hid) {
+        const m = pinMeshes.find((pm) => pm.userData.id === hid);
+        if (m) {
+          const base = m.userData.base as THREE.Vector3;
+          const target = -Math.atan2(base.x, base.z);
+          let d = target - world.rotation.y;
+          d = Math.atan2(Math.sin(d), Math.cos(d));
+          world.rotation.y += d * 0.08;
+        }
+      } else if (!interacting) {
+        world.rotation.y += dt * 0.08;
       }
+
+      const pulse = 1 + Math.sin(t * 2) * 0.4;
+      for (let i = 0; i < pinMeshes.length; i++) {
+        const hl = pinMeshes[i].userData.id === hid;
+        const ds = THREE.MathUtils.lerp(pinMeshes[i].scale.x, hl ? 2.4 : 1, 0.2);
+        pinMeshes[i].scale.setScalar(ds);
+        pulses[i].scale.setScalar(pulse * (hl ? 1.8 : 1));
+        (pulses[i].material as THREE.MeshBasicMaterial).opacity =
+          (hl ? 0.85 : 0.6) - (pulse - 1) * 0.7;
+      }
+
       controls.update();
       renderer.render(scene, camera);
     };
