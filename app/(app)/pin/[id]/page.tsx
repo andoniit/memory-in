@@ -1,6 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCircle } from "@/lib/auth";
+import { getBaseUrl } from "@/lib/base-url";
 import { PinManager } from "@/components/pin/PinManager";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,16 @@ export default async function ManagePinPage({
   const circle = await getCircle(user.id);
   if (!circle || circle.id !== pin.circle_id) redirect(`/p/${id}`);
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const { data: memories } = await supabase
+    .from("memories")
+    .select("*")
+    .eq("pin_id", id)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
 
-  return <PinManager pin={pin} url={`${appUrl}/p/${pin.id}`} />;
+  const appUrl = await getBaseUrl();
+
+  return (
+    <PinManager pin={pin} url={`${appUrl}/p/${pin.id}`} memories={memories ?? []} />
+  );
 }

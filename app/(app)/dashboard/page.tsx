@@ -75,7 +75,9 @@ export default async function DashboardPage() {
       emoji: p.emoji,
       title: p.title,
       city: p.city,
-      thumb_url: mems.find((m) => m.type !== "note")?.thumb_url ?? null,
+      thumb_url:
+        (mems.find((m) => m.id === p.cover_memory_id) ??
+          mems.find((m) => m.type !== "note"))?.thumb_url ?? null,
       memory_count: mems.length,
     };
   });

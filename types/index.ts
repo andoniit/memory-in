@@ -45,6 +45,7 @@ export type Pin = {
   story: string | null;
   is_public: boolean;
   view_count: number;
+  cover_memory_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -99,6 +100,7 @@ export interface Database {
           | "story"
           | "is_public"
           | "view_count"
+          | "cover_memory_id"
           | "created_at"
           | "updated_at"
         >;

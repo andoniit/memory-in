@@ -43,7 +43,10 @@ export default async function PinPage({
     .limit(60);
 
   const list: Memory[] = memories ?? [];
-  const hero = list.find((m) => m.type === "photo") ?? list[0];
+  const hero =
+    list.find((m) => m.id === pin.cover_memory_id) ??
+    list.find((m) => m.type === "photo") ??
+    list[0];
 
   const {
     data: { user },

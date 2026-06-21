@@ -3,15 +3,25 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, Loader2, Trash2 } from "lucide-react";
-import type { Pin } from "@/types/index";
+import { ChevronLeft, Loader2, Star, Trash2 } from "lucide-react";
+import type { Memory, Pin } from "@/types/index";
 import { InviteLink } from "@/components/InviteLink";
 import { btnPrimary, field, iconBtnGhost } from "@/lib/ui";
 
 const EMOJI = ["📍", "🏖️", "🗼", "⛰️", "🌴", "🏙️", "🌅", "🍷", "✈️", "🏛️"];
 
-export function PinManager({ pin, url }: { pin: Pin; url: string }) {
+export function PinManager({
+  pin,
+  url,
+  memories: initialMemories,
+}: {
+  pin: Pin;
+  url: string;
+  memories: Memory[];
+}) {
   const router = useRouter();
+  const [memories, setMemories] = useState(initialMemories);
+  const [coverId, setCoverId] = useState<string | null>(pin.cover_memory_id);
   const [title, setTitle] = useState(pin.title);
   const [city, setCity] = useState(pin.city ?? "");
   const [emoji, setEmoji] = useState(pin.emoji);
@@ -62,6 +72,28 @@ export function PinManager({ pin, url }: { pin: Pin; url: string }) {
       setDeleting(false);
     }
   }
+
+  async function deleteMemory(id: string) {
+    const res = await fetch(`/api/memories/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setMemories((m) => m.filter((x) => x.id !== id));
+      if (coverId === id) setCoverId(null);
+      router.refresh();
+    }
+  }
+
+  async function setCover(id: string) {
+    setCoverId(id);
+    await fetch(`/api/pins/${pin.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cover_memory_id: id }),
+    });
+    router.refresh();
+  }
+
+  const media = memories.filter((m) => m.type !== "note");
+  const notes = memories.filter((m) => m.type === "note");
 
   return (
     <main className="mx-auto max-w-md px-page py-5">
@@ -137,6 +169,85 @@ export function PinManager({ pin, url }: { pin: Pin; url: string }) {
         <button onClick={save} disabled={saving} className={`${btnPrimary} w-full`}>
           {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : "Save changes"}
         </button>
+      </section>
+
+      {/* Photos & videos */}
+      <section className="mt-10">
+        <div className="mb-3 flex items-center justify-between">
+          <p className="label">Photos &amp; videos</p>
+          <Link
+            href={`/p/${pin.id}/upload`}
+            className="font-mono text-micro uppercase tracking-[0.12em] text-accent"
+          >
+            + Add
+          </Link>
+        </div>
+
+        {media.length === 0 ? (
+          <p className="text-caption text-muted">No photos yet.</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-2">
+            {media.map((m) => {
+              const isCover = coverId === m.id;
+              return (
+                <div
+                  key={m.id}
+                  className="relative aspect-square overflow-hidden rounded-ctl border border-border bg-surface-2"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={m.thumb_url ?? ""}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                  {isCover && (
+                    <span className="absolute left-1 top-1 rounded-full bg-accent px-1.5 py-0.5 text-[0.6rem] font-medium text-white">
+                      Cover
+                    </span>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/60 to-transparent p-1">
+                    <button
+                      onClick={() => setCover(m.id)}
+                      aria-label="Set as cover"
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-ink"
+                    >
+                      <Star
+                        className={`h-3.5 w-3.5 ${isCover ? "fill-accent text-accent" : ""}`}
+                      />
+                    </button>
+                    <button
+                      onClick={() => deleteMemory(m.id)}
+                      aria-label="Delete"
+                      className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-accent"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {notes.length > 0 && (
+          <ul className="mt-3 space-y-2">
+            {notes.map((n) => (
+              <li
+                key={n.id}
+                className="flex items-start justify-between gap-3 rounded-ctl border border-border bg-surface p-3"
+              >
+                <p className="text-caption text-ink">{n.caption}</p>
+                <button
+                  onClick={() => deleteMemory(n.id)}
+                  aria-label="Delete note"
+                  className="shrink-0 text-muted hover:text-accent"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {/* NFC */}

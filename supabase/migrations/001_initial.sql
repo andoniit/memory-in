@@ -102,6 +102,11 @@ create table public.memories (
   created_at    timestamptz default now()
 );
 
+-- Chosen cover memory for a pin (added after memories exists).
+alter table public.pins
+  add column if not exists cover_memory_id uuid
+  references public.memories(id) on delete set null;
+
 -- ─────────────────────────────────────────
 -- PIN VIEWS (lightweight analytics)
 -- ─────────────────────────────────────────
