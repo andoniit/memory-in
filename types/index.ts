@@ -42,6 +42,7 @@ export type Pin = {
   lng: number | null;
   emoji: string;
   visit_date: string | null;
+  description: string | null;
   story: string | null;
   is_public: boolean;
   view_count: number;
@@ -97,6 +98,7 @@ export interface Database {
         Insert: Insert<
           Pin,
           | "emoji"
+          | "description"
           | "story"
           | "is_public"
           | "view_count"

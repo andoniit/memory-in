@@ -12,6 +12,7 @@ import type { GlobePin } from "@/components/globe/InteractiveGlobe";
 export interface DashPin extends GlobePin {
   title: string;
   city: string | null;
+  description: string | null;
   thumb_url: string | null;
   memory_count: number;
 }
@@ -73,7 +74,7 @@ export function DashboardGlobe({ pins }: { pins: DashPin[] }) {
               {hoveredPin.title}
             </p>
             <p className="mt-0.5 line-clamp-2 text-caption text-muted">
-              {metaLine(hoveredPin)}
+              {hoveredPin.description || metaLine(hoveredPin)}
             </p>
           </div>
         </div>

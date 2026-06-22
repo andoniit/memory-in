@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 const updateSchema = z.object({
   title: z.string().min(1).max(120).optional(),
   city: z.string().max(160).nullable().optional(),
+  description: z.string().max(2000).nullable().optional(),
   emoji: z.string().max(8).optional(),
   visit_date: z.string().nullable().optional(),
   is_public: z.boolean().optional(),

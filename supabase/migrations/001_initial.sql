@@ -73,6 +73,7 @@ create table public.pins (
   lng         double precision,
   emoji       text default '📍',
   visit_date  date,
+  description text,
   story       text,
   is_public   boolean default true,
   view_count  integer default 0,

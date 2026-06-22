@@ -129,6 +129,16 @@ export default async function PinPage({
         </span>
       </div>
 
+      {/* Description */}
+      {pin.description && (
+        <section className="border-b border-border px-page py-6">
+          <p className="label mb-3">About</p>
+          <p className="whitespace-pre-line text-body leading-relaxed">
+            {pin.description}
+          </p>
+        </section>
+      )}
+
       {/* AI story */}
       <StorySection
         pinId={id}

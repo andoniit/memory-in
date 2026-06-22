@@ -24,6 +24,7 @@ export function PinManager({
   const [coverId, setCoverId] = useState<string | null>(pin.cover_memory_id);
   const [title, setTitle] = useState(pin.title);
   const [city, setCity] = useState(pin.city ?? "");
+  const [description, setDescription] = useState(pin.description ?? "");
   const [emoji, setEmoji] = useState(pin.emoji);
   const [visitDate, setVisitDate] = useState(pin.visit_date ?? "");
   const [isPublic, setIsPublic] = useState(pin.is_public);
@@ -44,6 +45,7 @@ export function PinManager({
         body: JSON.stringify({
           title,
           city: city || null,
+          description: description.trim() || null,
           emoji,
           visit_date: visitDate || null,
           is_public: isPublic,
@@ -123,6 +125,16 @@ export function PinManager({
             value={city}
             onChange={(e) => setCity(e.target.value)}
             className={field}
+          />
+        </div>
+        <div>
+          <label className="label mb-2 block">Description</label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="A few words about this memory…"
+            className="w-full rounded-ctl border border-border bg-surface p-3 text-body text-ink outline-none transition-colors placeholder:text-muted/60 focus:border-accent"
           />
         </div>
         <div>
