@@ -276,7 +276,8 @@ export default function InteractiveGlobe({
           d = Math.atan2(Math.sin(d), Math.cos(d));
           world.rotation.y += d * 0.08;
         }
-      } else if (!interacting) {
+      } else if (!interacting && !hoverId) {
+        // Hold still while hovering a dot so it's easy to read/click.
         world.rotation.y += dt * 0.08;
       }
 
