@@ -165,7 +165,7 @@ export default function InteractiveGlobe({
         return !isOcean;
       };
       const positions: number[] = [];
-      const step = 1.4;
+      const step = 0.9;
       for (let lat = -85; lat <= 85; lat += step)
         for (let lng = -180; lng < 180; lng += step)
           if (isLand(lat, lng)) {
@@ -180,7 +180,7 @@ export default function InteractiveGlobe({
           new THREE.PointsMaterial({
             map: dotTex,
             color: DOT,
-            size: 0.02,
+            size: 0.013,
             sizeAttenuation: true,
             transparent: true,
             depthWrite: false,
