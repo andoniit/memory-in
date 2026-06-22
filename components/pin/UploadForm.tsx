@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, ImagePlus, Loader2 } from "lucide-react";
+import { ChevronLeft, ImagePlus, Loader2, Play, X } from "lucide-react";
 import { iconBtnGhost } from "@/lib/ui";
 import { GooglePhotosButton } from "@/components/pin/GooglePhotosButton";
 
@@ -40,6 +40,25 @@ export function UploadForm({
   const [progress, setProgress] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Local object-URL previews for the chosen files (revoked on change/unmount).
+  const previews = useMemo(
+    () =>
+      files.map((file) => ({
+        file,
+        url: URL.createObjectURL(file),
+        isVideo: file.type.startsWith("video"),
+      })),
+    [files],
+  );
+  useEffect(
+    () => () => previews.forEach((p) => URL.revokeObjectURL(p.url)),
+    [previews],
+  );
+
+  function removeFile(index: number) {
+    setFiles((fs) => fs.filter((_, i) => i !== index));
+  }
 
   async function getSignedParams(): Promise<SignedParams> {
     const res = await fetch("/api/upload-url");
@@ -178,10 +197,55 @@ export function UploadForm({
             <ImagePlus className="h-8 w-8" strokeWidth={1.5} />
             <span className="text-caption">
               {files.length > 0
-                ? `${files.length} file${files.length > 1 ? "s" : ""} selected`
+                ? `${files.length} file${files.length > 1 ? "s" : ""} selected — tap to change`
                 : `Tap to choose ${tab}`}
             </span>
           </button>
+
+          {previews.length > 0 && (
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {previews.map((p, i) => (
+                <div
+                  key={i}
+                  className="relative aspect-square overflow-hidden rounded-ctl border border-border bg-surface-2"
+                >
+                  {p.isVideo ? (
+                    <>
+                      <video
+                        src={p.url}
+                        muted
+                        playsInline
+                        className="h-full w-full object-cover"
+                      />
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/20">
+                        <Play className="h-6 w-6 fill-white text-white" />
+                      </span>
+                    </>
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={p.url}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  )}
+                  {busy && progress > 0 && (
+                    <span className="absolute inset-0 bg-white/40" />
+                  )}
+                  {!busy && (
+                    <button
+                      type="button"
+                      onClick={() => removeFile(i)}
+                      aria-label="Remove"
+                      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/55 text-white"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="my-3 flex items-center gap-3">
             <span className="h-px flex-1 bg-border" />
