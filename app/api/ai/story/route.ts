@@ -1,12 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getCircle } from "@/lib/auth";
-import { generateTravelStory } from "@/lib/openai";
+import { polishStory } from "@/lib/openai";
 
 /**
- * POST /api/ai/story  { pin_id }
- * Generates a travel story from the pin's details + memory captions, saves it
- * to pins.story, and returns it. Circle members only.
+ * POST /api/ai/story  { pin_id, draft }
+ * Rewrites the user's own draft into a warmer, poetic version and returns it.
+ * Does NOT save — the user reviews/edits, then saves via PATCH /api/pins/[id].
+ * Circle members only.
  */
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -19,20 +20,27 @@ export async function POST(request: NextRequest) {
 
   if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
-      { error: "AI stories are not configured (missing OPENAI_API_KEY)." },
+      { error: "AI help is not configured (missing OPENAI_API_KEY)." },
       { status: 503 },
     );
   }
 
   const body = await request.json().catch(() => null);
   const pinId = body?.pin_id as string | undefined;
+  const draft = (body?.draft as string | undefined)?.trim();
   if (!pinId) {
     return NextResponse.json({ error: "pin_id is required" }, { status: 422 });
+  }
+  if (!draft) {
+    return NextResponse.json(
+      { error: "Write a few words first, then let AI polish them." },
+      { status: 422 },
+    );
   }
 
   const { data: pin } = await supabase
     .from("pins")
-    .select("id, title, city, visit_date, circle_id")
+    .select("id, title, city, circle_id")
     .eq("id", pinId)
     .maybeSingle();
   if (!pin) {
@@ -44,43 +52,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { data: memories } = await supabase
-    .from("memories")
-    .select("caption")
-    .eq("pin_id", pinId)
-    .not("caption", "is", null)
-    .limit(20);
-
-  const captions = (memories ?? [])
-    .map((m) => m.caption)
-    .filter((c): c is string => !!c && c.trim().length > 0);
-
-  let story: string;
   try {
-    story = await generateTravelStory({
-      city: pin.city,
+    const story = await polishStory({
+      draft,
       title: pin.title,
-      visitDate: pin.visit_date,
-      captions,
+      city: pin.city,
     });
+    if (!story) {
+      return NextResponse.json({ error: "Empty result" }, { status: 502 });
+    }
+    return NextResponse.json({ story });
   } catch (e) {
     return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Story generation failed" },
+      { error: e instanceof Error ? e.message : "AI request failed" },
       { status: 502 },
     );
   }
-
-  if (!story) {
-    return NextResponse.json({ error: "Empty story" }, { status: 502 });
-  }
-
-  const { error } = await supabase
-    .from("pins")
-    .update({ story })
-    .eq("id", pinId);
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ story });
 }

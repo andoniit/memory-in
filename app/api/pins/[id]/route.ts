@@ -9,6 +9,7 @@ const updateSchema = z.object({
   emoji: z.string().max(8).optional(),
   visit_date: z.string().nullable().optional(),
   is_public: z.boolean().optional(),
+  story: z.string().max(4000).nullable().optional(),
   cover_memory_id: z.string().uuid().nullable().optional(),
 });
 

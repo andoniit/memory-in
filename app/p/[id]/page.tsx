@@ -139,12 +139,8 @@ export default async function PinPage({
         </section>
       )}
 
-      {/* AI story */}
-      <StorySection
-        pinId={id}
-        initialStory={pin.story}
-        canGenerate={isMember}
-      />
+      {/* Story — written by members, AI-assisted */}
+      <StorySection pinId={id} initialStory={pin.story} canEdit={isMember} />
 
       {/* Memories */}
       <section className="py-5">
