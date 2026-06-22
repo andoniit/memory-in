@@ -90,7 +90,14 @@ export function UploadForm({
         if (xhr.status >= 200 && xhr.status < 300) {
           resolve(JSON.parse(xhr.responseText));
         } else {
-          reject(new Error("Cloudinary upload failed"));
+          let msg = `Cloudinary upload failed (${xhr.status})`;
+          try {
+            const m = JSON.parse(xhr.responseText)?.error?.message;
+            if (m) msg = m;
+          } catch {
+            /* non-JSON response */
+          }
+          reject(new Error(msg));
         }
       };
       xhr.onerror = () => reject(new Error("Network error during upload"));
