@@ -48,13 +48,34 @@ export function DashboardGlobe({ pins }: { pins: DashPin[] }) {
         onPinTap={(id) => setSelected(pins.find((p) => p.id === id) ?? null)}
       />
 
-      {/* Hover tooltip (desktop) */}
+      {/* Hover card (desktop): cover + title + description */}
       {hoveredPin && (
         <div
-          className="pointer-events-none fixed z-30 -translate-x-1/2 -translate-y-[150%] whitespace-nowrap rounded-full bg-ink/90 px-2.5 py-1 text-micro font-medium text-white shadow-lg"
+          className="pointer-events-none fixed z-30 w-56 -translate-x-1/2 -translate-y-[calc(100%+16px)] overflow-hidden rounded-card border border-border bg-surface/95 shadow-xl backdrop-blur"
           style={{ left: cursor.x, top: cursor.y }}
         >
-          {hoveredPin.title}
+          <div className="aspect-[16/9] w-full bg-surface-2">
+            {hoveredPin.thumb_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={hoveredPin.thumb_url}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="flex h-full w-full items-center justify-center text-3xl opacity-40">
+                {hoveredPin.emoji}
+              </span>
+            )}
+          </div>
+          <div className="p-3">
+            <p className="truncate text-body font-medium text-ink">
+              {hoveredPin.title}
+            </p>
+            <p className="mt-0.5 line-clamp-2 text-caption text-muted">
+              {metaLine(hoveredPin)}
+            </p>
+          </div>
         </div>
       )}
 

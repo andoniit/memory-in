@@ -152,6 +152,8 @@ export default function InteractiveGlobe({
       const ctx = cv.getContext("2d")!;
       ctx.drawImage(img, 0, 0);
       const data = ctx.getImageData(0, 0, cv.width, cv.height).data;
+      // Ocean on the day map is blue-dominant; everything else (land, ice,
+      // desert) is not. This is far more accurate than a brightness threshold.
       const isLand = (lat: number, lng: number) => {
         const x = Math.min(cv.width - 1, Math.floor(((lng + 180) / 360) * cv.width));
         const y = Math.min(cv.height - 1, Math.floor(((90 - lat) / 180) * cv.height));
@@ -159,11 +161,11 @@ export default function InteractiveGlobe({
         const r = data[i];
         const g = data[i + 1];
         const b = data[i + 2];
-        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-        return lum > 58 && !(b > r + 16 && lum < 95);
+        const isOcean = b > Math.max(r, g) + 10 && b > 45;
+        return !isOcean;
       };
       const positions: number[] = [];
-      const step = 1.8;
+      const step = 1.4;
       for (let lat = -85; lat <= 85; lat += step)
         for (let lng = -180; lng < 180; lng += step)
           if (isLand(lat, lng)) {
