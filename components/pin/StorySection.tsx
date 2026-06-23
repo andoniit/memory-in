@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, Sparkles } from "lucide-react";
 
+// AI polish is opt-in (it uses the paid OpenAI API). Off by default → $0.
+const AI_ENABLED = process.env.NEXT_PUBLIC_AI_ENABLED === "true";
+
 /**
  * The pin's story — written by the member, with AI as an optional "make it
  * poetic" assistant on their own draft. Non-members see the saved story
@@ -85,18 +88,20 @@ export function StorySection({
     <section className="border-b border-border px-page py-6">
       <div className="mb-3 flex items-center justify-between">
         <p className="label">Story</p>
-        <button
-          onClick={polish}
-          disabled={polishing || saving}
-          className="flex items-center gap-1.5 font-mono text-micro uppercase tracking-[0.12em] text-accent disabled:opacity-50"
-        >
-          {polishing ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Sparkles className="h-3.5 w-3.5" />
-          )}
-          Make it poetic
-        </button>
+        {AI_ENABLED && (
+          <button
+            onClick={polish}
+            disabled={polishing || saving}
+            className="flex items-center gap-1.5 font-mono text-micro uppercase tracking-[0.12em] text-accent disabled:opacity-50"
+          >
+            {polishing ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
+            Make it poetic
+          </button>
+        )}
       </div>
 
       <textarea
