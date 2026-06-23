@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, Wand2 } from "lucide-react";
 
 // AI polish is opt-in (it uses the paid OpenAI API). Off by default → $0.
 const AI_ENABLED = process.env.NEXT_PUBLIC_AI_ENABLED === "true";
@@ -23,23 +23,23 @@ export function StorySection({
 }) {
   const router = useRouter();
   const [text, setText] = useState(initialStory ?? "");
-  const [polishing, setPolishing] = useState(false);
+  const [polishing, setPolishing] = useState<"rephrase" | "poetic" | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function polish() {
+  async function polish(mode: "rephrase" | "poetic") {
     if (!text.trim()) {
-      setError("Write a few words first, then let AI polish them.");
+      setError("Write a few words first, then let AI help.");
       return;
     }
-    setPolishing(true);
+    setPolishing(mode);
     setError(null);
     try {
       const res = await fetch("/api/ai/story", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin_id: pinId, draft: text }),
+        body: JSON.stringify({ pin_id: pinId, draft: text, mode }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "AI request failed");
@@ -48,7 +48,7 @@ export function StorySection({
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
-      setPolishing(false);
+      setPolishing(null);
     }
   }
 
@@ -89,18 +89,32 @@ export function StorySection({
       <div className="mb-3 flex items-center justify-between">
         <p className="label">Story</p>
         {AI_ENABLED && (
-          <button
-            onClick={polish}
-            disabled={polishing || saving}
-            className="flex items-center gap-1.5 font-mono text-micro uppercase tracking-[0.12em] text-accent disabled:opacity-50"
-          >
-            {polishing ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Sparkles className="h-3.5 w-3.5" />
-            )}
-            Make it poetic
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => polish("rephrase")}
+              disabled={!!polishing || saving}
+              className="flex items-center gap-1.5 font-mono text-micro uppercase tracking-[0.12em] text-accent disabled:opacity-50"
+            >
+              {polishing === "rephrase" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Wand2 className="h-3.5 w-3.5" />
+              )}
+              Rephrase
+            </button>
+            <button
+              onClick={() => polish("poetic")}
+              disabled={!!polishing || saving}
+              className="flex items-center gap-1.5 font-mono text-micro uppercase tracking-[0.12em] text-accent disabled:opacity-50"
+            >
+              {polishing === "poetic" ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5" />
+              )}
+              Poetic
+            </button>
+          </div>
         )}
       </div>
 
@@ -111,7 +125,11 @@ export function StorySection({
           setSaved(false);
         }}
         rows={4}
-        placeholder="Write your story… then tap “Make it poetic” for an AI rewrite you can edit."
+        placeholder={
+          AI_ENABLED
+            ? "Write your story… then tap Rephrase or Poetic for an AI rewrite you can edit."
+            : "Write your story…"
+        }
         className="w-full rounded-ctl border border-border bg-surface p-3 text-body leading-relaxed text-ink outline-none transition-colors placeholder:text-muted/60 focus:border-accent"
       />
 
@@ -120,7 +138,7 @@ export function StorySection({
       <div className="mt-3 flex items-center gap-3">
         <button
           onClick={save}
-          disabled={saving || polishing || !dirty}
+          disabled={saving || !!polishing || !dirty}
           className="flex min-h-[44px] items-center justify-center gap-2 rounded-ctl bg-accent px-5 text-body font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-50"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save story"}

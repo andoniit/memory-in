@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const pinId = body?.pin_id as string | undefined;
   const draft = (body?.draft as string | undefined)?.trim();
+  const mode = body?.mode === "rephrase" ? "rephrase" : "poetic";
   if (!pinId) {
     return NextResponse.json({ error: "pin_id is required" }, { status: 422 });
   }
@@ -57,6 +58,7 @@ export async function POST(request: NextRequest) {
       draft,
       title: pin.title,
       city: pin.city,
+      mode,
     });
     if (!story) {
       return NextResponse.json({ error: "Empty result" }, { status: 502 });
