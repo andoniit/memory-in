@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Settings } from "lucide-react";
+import { Settings, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCircle } from "@/lib/auth";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -105,12 +105,21 @@ export default async function DashboardPage() {
 
       {/* Empty / hint state */}
       {dashPins.length === 0 ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-28 z-10 px-page text-center">
-          <p className="text-body">No memories yet.</p>
-          <p className="mx-auto mt-1 max-w-xs text-caption text-muted">
-            Tap <span className="text-accent">+</span> to create your first pin —
-            it&apos;ll appear here on the globe.
-          </p>
+        <div className="absolute inset-0 z-10 flex items-center justify-center px-page">
+          <div className="w-full max-w-xs rounded-card border border-border bg-surface/90 p-6 text-center shadow-xl backdrop-blur">
+            <p className="text-5xl">🌍</p>
+            <h2 className="mt-3 text-heading">Your globe is empty</h2>
+            <p className="mx-auto mt-1 text-caption text-muted">
+              Tag a book, a wall, a place — anything. Add photos and it appears
+              here as a point.
+            </p>
+            <Link
+              href="/pin/new"
+              className="mt-5 inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-ctl bg-accent px-5 text-body font-medium text-white transition-colors hover:bg-accent-strong"
+            >
+              <Plus className="h-5 w-5" /> Create your first memory
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="pointer-events-none absolute inset-x-0 bottom-28 z-10 text-center">

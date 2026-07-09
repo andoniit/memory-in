@@ -2,7 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, Loader2, MapPin, Check } from "lucide-react";
+import {
+  ChevronLeft,
+  Loader2,
+  MapPin,
+  Check,
+  ImagePlus,
+  ChevronDown,
+} from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { InviteLink } from "@/components/InviteLink";
 import { NfcWriter } from "@/components/pin/NfcWriter";
@@ -86,58 +93,90 @@ export default function NewPinPage() {
 
   if (created) {
     return (
-      <main className="mx-auto max-w-md px-page py-5">
-        <span className="index-num">05 — PROGRAM TAG</span>
-        <h1 className="mt-2 text-display">Pin created</h1>
+      <main className="mx-auto max-w-md px-page py-6">
+        <span className="index-num">MEMORY CREATED</span>
+        <h1 className="mt-2 text-display">
+          “{title.trim() || "Your memory"}” is ready
+        </h1>
         <p className="mt-3 text-body text-muted">
-          Hold a blank NFC sticker to your phone and tap{" "}
-          <span className="text-ink">Write to sticker</span> — that&apos;s it.
+          Add your first photos, videos, or a note. You can program an NFC
+          sticker whenever you like.
         </p>
 
-        {/* In-app NFC writer (Chrome/Android); falls back to QR + NFC Tools */}
-        <div className="mt-6">
-          <NfcWriter url={created.url} />
-        </div>
-
-        <div className="mt-6 flex justify-center">
-          <div className="rounded-card border border-border bg-white p-4">
-            <QRCodeSVG value={created.url} size={160} fgColor="#171717" />
-          </div>
-        </div>
-        <p className="mt-3 text-center text-caption text-muted">
-          Or scan this QR to open the pin.
-        </p>
-
-        <div className="mt-5">
-          <InviteLink url={created.url} />
-        </div>
-
-        <ol className="mt-7 space-y-3 border-t border-border pt-5">
-          <li className="text-caption text-muted">
-            No tap-to-write? Use the free{" "}
-            <span className="text-ink">NFC Tools</span> app instead:
-          </li>
-          {[
-            "Open NFC Tools → Write → Add a record → URL/URI",
-            "Paste the URL above",
-            "Tap Write, then hold your phone to the sticker",
-            "Stick it on the object — matte surface, not behind glass — and tap to test",
-          ].map((step, i) => (
-            <li key={i} className="flex gap-4">
-              <span className="index-num pt-0.5">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <span className="text-body text-muted">{step}</span>
-            </li>
-          ))}
-        </ol>
-
-        <div className="mt-8 flex gap-3">
-          <Link href={`/p/${created.id}/upload`} className={`${btnPrimary} flex-1`}>
-            Add photos
+        <div className="mt-7 flex flex-col gap-3">
+          <Link
+            href={`/p/${created.id}/upload`}
+            className={`${btnPrimary} w-full`}
+          >
+            <ImagePlus className="h-5 w-5" /> Add photos &amp; videos
           </Link>
-          <Link href="/dashboard" className={`${btnSecondary} flex-1`}>
-            Done
+          <Link href={`/p/${created.id}`} className={`${btnSecondary} w-full`}>
+            View memory
+          </Link>
+        </div>
+
+        {/* Optional: program a physical NFC sticker */}
+        <details className="group mt-8 overflow-hidden rounded-card border border-border bg-surface">
+          <summary className="flex cursor-pointer list-none items-center justify-between p-4 [&::-webkit-details-marker]:hidden">
+            <span className="text-body font-medium">
+              Program an NFC sticker{" "}
+              <span className="text-muted">(optional)</span>
+            </span>
+            <ChevronDown className="h-5 w-5 text-muted transition-transform group-open:rotate-180" />
+          </summary>
+
+          <div className="px-4 pb-4">
+            <p className="mb-4 text-caption text-muted">
+              No sticker? Just share the link or QR below — programming a sticker
+              is only for the tap-to-open magic. Cheap NTAG213 stickers are on{" "}
+              <a
+                href="https://www.amazon.com/s?k=NTAG213+NFC+stickers+25mm"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent underline"
+              >
+                Amazon
+              </a>
+              .
+            </p>
+
+            <NfcWriter url={created.url} />
+
+            <div className="mt-4 flex justify-center">
+              <div className="rounded-card border border-border bg-white p-4">
+                <QRCodeSVG value={created.url} size={150} fgColor="#171717" />
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <InviteLink url={created.url} />
+            </div>
+
+            <ol className="mt-5 space-y-3 border-t border-border pt-4">
+              <li className="text-caption text-muted">
+                No tap-to-write? Use the free{" "}
+                <span className="text-ink">NFC Tools</span> app:
+              </li>
+              {[
+                "Open NFC Tools → Write → Add a record → URL/URI",
+                "Paste the URL above",
+                "Tap Write, then hold your phone to the sticker",
+                "Stick it on the object (matte surface, not behind glass) and tap to test",
+              ].map((step, i) => (
+                <li key={i} className="flex gap-4">
+                  <span className="index-num pt-0.5">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="text-body text-muted">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </details>
+
+        <div className="mt-6 text-center">
+          <Link href="/dashboard" className="label hover:text-ink">
+            Done — go to globe
           </Link>
         </div>
       </main>
