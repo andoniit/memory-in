@@ -60,6 +60,57 @@ export function UploadForm({
     setFiles((fs) => fs.filter((_, i) => i !== index));
   }
 
+  /**
+   * Downscale big photos in the browser before uploading. Phone photos are
+   * often 4-12MB; shrinking them avoids dropped uploads on mobile data and
+   * keeps well inside the free Cloudinary quota. Falls back to the original
+   * file if the browser can't decode it (e.g. an exotic format).
+   */
+  async function compressImage(file: File): Promise<File> {
+    if (!file.type.startsWith("image")) return file;
+    const MAX_DIM = 2048;
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, MAX_DIM / Math.max(bitmap.width, bitmap.height));
+      if (scale === 1 && file.size <= 2 * 1024 * 1024) {
+        bitmap.close?.();
+        return file;
+      }
+      const w = Math.round(bitmap.width * scale);
+      const h = Math.round(bitmap.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return file;
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      bitmap.close?.();
+      const blob = await new Promise<Blob | null>((res) =>
+        canvas.toBlob(res, "image/jpeg", 0.85),
+      );
+      if (!blob || blob.size >= file.size) return file;
+      return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", {
+        type: "image/jpeg",
+      });
+    } catch {
+      return file;
+    }
+  }
+
+  /** Guard the Cloudinary free-tier limits with a clear message. */
+  function checkSize(file: File) {
+    const mb = file.size / (1024 * 1024);
+    const isVideo = file.type.startsWith("video");
+    const limit = isVideo ? 100 : 10;
+    if (mb > limit) {
+      throw new Error(
+        `“${file.name}” is ${mb.toFixed(0)}MB — ${
+          isVideo ? "videos" : "photos"
+        } must be under ${limit}MB.`,
+      );
+    }
+  }
+
   async function getSignedParams(): Promise<SignedParams> {
     const res = await fetch("/api/upload-url");
     if (!res.ok)
@@ -100,7 +151,17 @@ export function UploadForm({
           reject(new Error(msg));
         }
       };
-      xhr.onerror = () => reject(new Error("Network error during upload"));
+      xhr.timeout = 5 * 60 * 1000;
+      xhr.ontimeout = () =>
+        reject(
+          new Error("Upload timed out — check your connection and try again."),
+        );
+      xhr.onerror = () =>
+        reject(
+          new Error(
+            "Network error during upload — the connection dropped or the file is too large.",
+          ),
+        );
       xhr.send(form);
     });
   }
@@ -126,7 +187,9 @@ export function UploadForm({
         if (files.length === 0) throw new Error("Choose a file first.");
         const params = await getSignedParams();
         for (let i = 0; i < files.length; i++) {
-          const file = files[i];
+          // Shrink photos first, then check we're inside the size limits.
+          const file = await compressImage(files[i]);
+          checkSize(file);
           const result = await uploadToCloudinary(file, params, (pct) => {
             setProgress(Math.round(((i + pct / 100) / files.length) * 100));
           });
